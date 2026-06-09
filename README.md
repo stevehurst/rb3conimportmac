@@ -107,11 +107,9 @@ The Xbox 360 loads the newest title update it finds across all storage. If your 
 
 ## Getting Custom Songs
 
-Custom RB3 songs are distributed as `.rb3con` files (STFS CON packages). Good sources:
+Custom RB3 songs are distributed as `.rb3con` files (STFS CON packages). The most complete and up-to-date source is:
 
-- [Customs Creators Collective (C3)](https://customscreatorscollective.wordpress.com)
-- [RBCustis](http://www.rbcustis.com)
-- Community Discord servers for Rock Band customs
+- [Rhythmverse](https://rhythmverse.co/songfiles/game/rb3)
 
 ### CON vs LIVE vs Clone Hero
 
