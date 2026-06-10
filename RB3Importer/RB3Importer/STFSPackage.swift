@@ -74,36 +74,6 @@ struct STFSHeader {
     }
 
     static func parseArtistAndAlbum(from description: String, displayName: String = "") -> (artist: String?, album: String?) {
-        let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        // Try parsing description in format: "Song" -- Artist. Credits...
-        if let dashRange = trimmed.range(of: "--") ?? trimmed.range(of: " - ") {
-            var afterDash = String(trimmed[dashRange.upperBound...])
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-
-            // Strip trailing credit/promo text
-            for cutoff in ["Song credits", "Credits at", "http://", "https://", "Brought to you", "For more", "Visit us", ". "] {
-                if let cutRange = afterDash.range(of: cutoff, options: .caseInsensitive) {
-                    afterDash = String(afterDash[afterDash.startIndex..<cutRange.lowerBound])
-                }
-            }
-            afterDash = afterDash.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(.init(charactersIn: ".")))
-
-            if !afterDash.isEmpty && !afterDash.lowercased().hasPrefix("brought to you") {
-                return (afterDash, nil)
-            }
-        }
-
-        // Try parsing description as "Artist - Album"
-        if !trimmed.isEmpty && !trimmed.lowercased().hasPrefix("brought to you") {
-            if let range = trimmed.range(of: " - ") {
-                let part1 = String(trimmed[trimmed.startIndex..<range.lowerBound]).trimmingCharacters(in: .whitespaces)
-                let part2 = String(trimmed[range.upperBound...]).trimmingCharacters(in: .whitespaces)
-                if !part1.isEmpty { return (part1, part2.isEmpty ? nil : part2) }
-            }
-        }
-
-        // Try parsing display name as "Artist - Song" or "Artist – Song"
         let name = displayName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(.init(charactersIn: "\"")))
         for sep in [" – ", " - "] {
             if let range = name.range(of: sep) {
@@ -111,7 +81,6 @@ struct STFSHeader {
                 if !artist.isEmpty { return (artist, nil) }
             }
         }
-
         return (nil, nil)
     }
 }
@@ -162,12 +131,25 @@ func parseSTFSHeader(from url: URL) throws -> STFSHeader {
 
 func writeSTFSMetadata(to url: URL, displayName: String, description: String, thumbnail: Data?) throws {
     var data = try Data(contentsOf: url)
-    guard data.count >= 0x571A else { throw STFSError.fileTooSmall }
+    guard data.count >= 0x500 else { throw STFSError.fileTooSmall }
 
-    data.writeUTF16BEString(displayName, at: STFSHeader.displayNameOffset, maxBytes: STFSHeader.displayNameMaxBytes)
-    data.writeUTF16BEString(description, at: STFSHeader.descriptionOffset, maxBytes: STFSHeader.descriptionMaxBytes)
+    // Write display name to all 18 locale slots
+    let nameSlotSize = STFSHeader.displayNameMaxBytes
+    for i in 0..<18 {
+        let offset = STFSHeader.displayNameOffset + (i * nameSlotSize)
+        guard offset + nameSlotSize <= data.count else { break }
+        data.writeUTF16BEString(displayName, at: offset, maxBytes: nameSlotSize)
+    }
 
-    if let thumb = thumbnail {
+    // Write description to all 18 locale slots
+    let descSlotSize = STFSHeader.descriptionMaxBytes
+    for i in 0..<18 {
+        let offset = STFSHeader.descriptionOffset + (i * descSlotSize)
+        guard offset + descSlotSize <= data.count else { break }
+        data.writeUTF16BEString(description, at: offset, maxBytes: descSlotSize)
+    }
+
+    if let thumb = thumbnail, data.count >= STFSHeader.thumbnailDataOffset + STFSHeader.thumbnailMaxBytes {
         let clampedSize = min(thumb.count, STFSHeader.thumbnailMaxBytes)
         data.writeUInt32BE(UInt32(clampedSize), at: STFSHeader.thumbnailSizeOffset)
         let thumbRange = STFSHeader.thumbnailDataOffset..<(STFSHeader.thumbnailDataOffset + clampedSize)

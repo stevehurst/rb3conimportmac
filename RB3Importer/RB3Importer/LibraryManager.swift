@@ -5,6 +5,7 @@ struct LibrarySong: Identifiable, Hashable {
     let id: UUID
     let url: URL
     let header: STFSHeader
+    let modificationDate: Date?
     var isSelected: Bool = false
 
     var songName: String { header.displayName }
@@ -48,11 +49,21 @@ class LibraryManager: ObservableObject {
     @Published var duplicates: [DuplicateGroup] = []
     @Published var selectedSongIDs: Set<UUID> = []
 
+    private var watchTask: Task<Void, Never>?
+    private var lastScanFingerprint: String = ""
+
     init() {
         libraryPath = UserDefaults.standard.string(forKey: libraryPathKey)
         if libraryPath != nil {
-            Task { await scan() }
+            Task {
+                await scan()
+                startWatching()
+            }
         }
+    }
+
+    deinit {
+        watchTask?.cancel()
     }
 
     var selectedSongs: [LibrarySong] {
@@ -68,12 +79,57 @@ class LibraryManager: ObservableObject {
         panel.begin { [weak self] response in
             guard response == .OK, let url = panel.url else { return }
             Task { @MainActor in
+                self?.watchTask?.cancel()
                 self?.libraryPath = url.path
                 UserDefaults.standard.set(url.path, forKey: libraryPathKey)
                 await self?.scan()
+                self?.startWatching()
             }
         }
     }
+
+    // MARK: - File system watching
+
+    private func startWatching() {
+        watchTask?.cancel()
+        watchTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(5))
+                guard !Task.isCancelled else { return }
+                guard let self, let path = self.libraryPath else { return }
+                let fingerprint = await Task.detached(priority: .utility) {
+                    Self.folderFingerprint(URL(fileURLWithPath: path))
+                }.value
+                if fingerprint != self.lastScanFingerprint && !self.lastScanFingerprint.isEmpty {
+                    await self.scan()
+                }
+            }
+        }
+    }
+
+    private nonisolated static func folderFingerprint(_ folder: URL) -> String {
+        let fm = FileManager.default
+        guard let enumerator = fm.enumerator(
+            at: folder,
+            includingPropertiesForKeys: [.fileSizeKey, .contentModificationDateKey],
+            options: [.skipsHiddenFiles]
+        ) else { return "" }
+
+        var parts: [String] = []
+        for case let fileURL as URL in enumerator {
+            let ext = fileURL.pathExtension.lowercased()
+            guard ext == "rb3con" || ext == "" else { continue }
+            guard let res = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey, .isRegularFileKey]),
+                  res.isRegularFile == true else { continue }
+            let size = res.fileSize ?? 0
+            let mod = res.contentModificationDate?.timeIntervalSince1970 ?? 0
+            parts.append("\(fileURL.lastPathComponent):\(size):\(mod)")
+        }
+        parts.sort()
+        return parts.joined(separator: "|")
+    }
+
+    // MARK: - Scanning
 
     func scan() async {
         guard let path = libraryPath else { return }
@@ -82,13 +138,16 @@ class LibraryManager: ObservableObject {
 
         isScanning = true
 
-        let songs = await Task.detached(priority: .userInitiated) {
-            Self.scanFolder(folderURL)
+        let (songs, fingerprint) = await Task.detached(priority: .userInitiated) {
+            let s = Self.scanFolder(folderURL)
+            let f = Self.folderFingerprint(folderURL)
+            return (s, f)
         }.value
 
         let validIDs = Set(songs.map(\.id))
         selectedSongIDs = selectedSongIDs.intersection(validIDs)
         allSongs = songs
+        lastScanFingerprint = fingerprint
         buildGroups()
         detectDuplicates()
         isScanning = false
@@ -98,7 +157,7 @@ class LibraryManager: ObservableObject {
         let fm = FileManager.default
         guard let enumerator = fm.enumerator(
             at: folder,
-            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey],
+            includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey, .contentModificationDateKey],
             options: [.skipsHiddenFiles]
         ) else { return [] }
 
@@ -107,13 +166,18 @@ class LibraryManager: ObservableObject {
             let ext = fileURL.pathExtension.lowercased()
             guard ext == "rb3con" || ext == "" else { continue }
 
-            guard let res = try? fileURL.resourceValues(forKeys: [.isRegularFileKey]),
+            guard let res = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .contentModificationDateKey]),
                   res.isRegularFile == true else { continue }
 
             guard let header = try? parseSTFSHeader(from: fileURL),
                   header.isRB3 else { continue }
 
-            songs.append(LibrarySong(id: UUID(), url: fileURL, header: header))
+            songs.append(LibrarySong(
+                id: UUID(),
+                url: fileURL,
+                header: header,
+                modificationDate: res.contentModificationDate
+            ))
         }
         return songs.sorted { $0.songName.localizedCaseInsensitiveCompare($1.songName) == .orderedAscending }
     }
@@ -170,7 +234,8 @@ class LibraryManager: ObservableObject {
     func refreshSong(at url: URL) {
         guard let idx = allSongs.firstIndex(where: { $0.url == url }),
               let header = try? parseSTFSHeader(from: url) else { return }
-        allSongs[idx] = LibrarySong(id: allSongs[idx].id, url: url, header: header, isSelected: allSongs[idx].isSelected)
+        let modDate = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
+        allSongs[idx] = LibrarySong(id: allSongs[idx].id, url: url, header: header, modificationDate: modDate)
         buildGroups()
     }
 

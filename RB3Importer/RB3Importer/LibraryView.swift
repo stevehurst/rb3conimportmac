@@ -137,6 +137,19 @@ struct LibraryView: View {
                     .foregroundStyle(.blue)
             }
 
+            Button {
+                if library.selectedSongIDs.count == library.allSongs.count {
+                    library.deselectAll()
+                } else {
+                    library.selectAll()
+                }
+            } label: {
+                Text(library.selectedSongIDs.count == library.allSongs.count ? "Deselect All" : "Select All")
+                    .font(.caption)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+
             Menu {
                 Button("Select All") { library.selectAll() }
                 Button("Deselect All") { library.deselectAll() }

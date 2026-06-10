@@ -7,7 +7,6 @@ struct MetadataEditorView: View {
 
     @State private var songName: String
     @State private var artist: String
-    @State private var album: String
     @State private var artworkImage: NSImage?
     @State private var newThumbnailData: Data?
     @State private var isSaving = false
@@ -19,18 +18,22 @@ struct MetadataEditorView: View {
         self.song = song
         self.onSave = onSave
         _songName = State(initialValue: song.header.displayName)
-        _artist = State(initialValue: song.header.artist)
-        _album = State(initialValue: song.header.album)
+        _artist = State(initialValue: song.header.displayDescription)
         _artworkImage = State(initialValue: song.header.thumbnailImage)
     }
 
     var body: some View {
         VStack(spacing: 0) {
             Form {
-                Section("Song Information") {
-                    TextField("Song Name", text: $songName)
-                    TextField("Artist", text: $artist)
-                    TextField("Album", text: $album)
+                Section {
+                    TextField("Display Name (Artist - Song Name)", text: $songName)
+                    TextField("Description", text: $artist)
+                } header: {
+                    Text("Song Information")
+                } footer: {
+                    Text("These fields are for file identification only — they appear in the Xbox 360 dashboard but do not affect gameplay.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
 
                 Section("Artwork") {
@@ -118,20 +121,11 @@ struct MetadataEditorView: View {
         isSaving = true
         errorMessage = nil
 
-        let description: String
-        if !artist.isEmpty && !album.isEmpty {
-            description = "\(artist) - \(album)"
-        } else if !artist.isEmpty {
-            description = artist
-        } else {
-            description = album
-        }
-
         do {
             try writeSTFSMetadata(
                 to: song.url,
                 displayName: songName,
-                description: description,
+                description: artist,
                 thumbnail: newThumbnailData
             )
             onSave()

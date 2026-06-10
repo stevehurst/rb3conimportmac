@@ -77,12 +77,16 @@ struct ContentView: View {
             .frame(maxWidth: 300)
 
             Button {
+                let currentDriveURL = selectedDrive?.url
                 driveManager.refresh()
+                if let url = currentDriveURL {
+                    Task { await driveContent.scan(driveURL: url) }
+                }
             } label: {
                 Image(systemName: "arrow.clockwise")
             }
             .buttonStyle(.plain)
-            .help("Refresh drive list")
+            .help("Rescan drives and drive content")
 
             if let drive = selectedDrive {
                 if drive.hasXboxContent {
@@ -94,6 +98,21 @@ struct ContentView: View {
                         .foregroundStyle(.orange)
                         .font(.caption)
                         .help("No Xbox Content folder — configure this drive on your Xbox 360 first")
+                }
+            }
+
+            if driveContent.isScanning {
+                HStack(spacing: 6) {
+                    ProgressView().scaleEffect(0.6)
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Scanning drive…")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text("Some scanning takes time, be patient.")
+                            .font(.caption2)
+                            .italic()
+                            .foregroundStyle(.tertiary)
+                    }
                 }
             }
 
@@ -127,47 +146,40 @@ struct ContentView: View {
 
     @ViewBuilder
     private var syncStatusView: some View {
-        switch syncStatus {
-        case .idle:
-            if library.selectedSongs.isEmpty {
-                Text("No songs selected")
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-            } else {
-                let pending = library.selectedSongs.filter { !driveContent.isSongOnDrive($0) }.count
-                let onDrive = library.selectedSongs.count - pending
-                HStack(spacing: 6) {
-                    if onDrive > 0 {
-                        Label("\(onDrive) on drive", systemImage: "checkmark.circle")
-                            .foregroundStyle(.green)
-                    }
-                    if pending > 0 {
-                        Label("\(pending) pending", systemImage: "arrow.right.circle.dotted")
-                            .foregroundStyle(.orange)
-                    }
-                }
-                .font(.caption)
-            }
-        case .syncing(let copied, let total):
+        if isSyncing, case .syncing(let copied, let total) = syncStatus {
             HStack(spacing: 6) {
                 ProgressView().scaleEffect(0.6)
                 Text("Syncing \(copied)/\(total)…")
             }
             .font(.caption)
             .foregroundStyle(.secondary)
-        case .done(let copied, let skipped, let errors):
-            HStack(spacing: 8) {
-                if copied > 0 {
-                    Label("\(copied) synced", systemImage: "checkmark.circle.fill")
+        } else {
+            liveSyncCounts
+        }
+    }
+
+    @ViewBuilder
+    private var liveSyncCounts: some View {
+        if library.selectedSongs.isEmpty {
+            Text("No songs selected")
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+        } else {
+            let onDrive = library.selectedSongs.filter { driveContent.isSongOnDrive($0) && !driveContent.songNeedsResync($0) }.count
+            let needsResync = library.selectedSongs.filter { driveContent.songNeedsResync($0) }.count
+            let pending = library.selectedSongs.count - onDrive - needsResync
+            HStack(spacing: 6) {
+                if onDrive > 0 {
+                    Label("\(onDrive) on drive", systemImage: "checkmark.circle")
                         .foregroundStyle(.green)
                 }
-                if skipped > 0 {
-                    Label("\(skipped) skipped", systemImage: "minus.circle")
-                        .foregroundStyle(.secondary)
+                if needsResync > 0 {
+                    Label("\(needsResync) updated", systemImage: "arrow.triangle.2.circlepath")
+                        .foregroundStyle(.blue)
                 }
-                if errors > 0 {
-                    Label("\(errors) failed", systemImage: "xmark.circle.fill")
-                        .foregroundStyle(.red)
+                if pending > 0 {
+                    Label("\(pending) pending", systemImage: "arrow.right.circle.dotted")
+                        .foregroundStyle(.orange)
                 }
             }
             .font(.caption)
@@ -181,12 +193,16 @@ struct ContentView: View {
     private func handleDrivesChanged(_: [DriveInfo], _ drives: [DriveInfo]) {
         if selectedDriveID == nil {
             let xbox = drives.filter { $0.hasXboxContent }
-            if xbox.count == 1 { selectedDriveID = xbox[0].id }
+            if xbox.count == 1 {
+                selectedDriveID = xbox[0].id
+            }
+        } else if let drive = drives.first(where: { $0.id == selectedDriveID }) {
+            Task { await driveContent.scan(driveURL: drive.url) }
         }
     }
 
-    private func handleDriveSelected(_: String?, _: String?) {
-        if let drive = selectedDrive {
+    private func handleDriveSelected(_: String?, _ newID: String?) {
+        if let newID, let drive = driveManager.drives.first(where: { $0.id == newID }) {
             Task { await driveContent.scan(driveURL: drive.url) }
         } else {
             driveContent.driveSongs = []
@@ -200,7 +216,9 @@ struct ContentView: View {
     }
 
     private func syncToDrive(_ driveURL: URL) async {
-        let songsToSync = library.selectedSongs.filter { !driveContent.isSongOnDrive($0) }
+        let songsToSync = library.selectedSongs.filter {
+            !driveContent.isSongOnDrive($0) || driveContent.songNeedsResync($0)
+        }
         guard !songsToSync.isEmpty else {
             syncStatus = .done(copied: 0, skipped: library.selectedSongs.count, errors: 0)
             return
@@ -219,13 +237,7 @@ struct ContentView: View {
             let destFile = destDir.appendingPathComponent(destName)
 
             if FileManager.default.fileExists(atPath: destFile.path) {
-                let srcSize = (try? song.url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? -1
-                let dstSize = (try? destFile.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? -2
-                if srcSize == dstSize {
-                    skipped += 1
-                    syncStatus = .syncing(copied: copied, total: total)
-                    continue
-                }
+                try? FileManager.default.removeItem(at: destFile)
             }
 
             do {

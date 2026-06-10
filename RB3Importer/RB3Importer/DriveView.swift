@@ -52,9 +52,19 @@ class DriveContentManager: ObservableObject {
     }
 
     func isSongOnDrive(_ librarySong: LibrarySong) -> Bool {
+        matchingDriveSong(for: librarySong) != nil
+    }
+
+    func songNeedsResync(_ librarySong: LibrarySong) -> Bool {
+        guard let driveSong = matchingDriveSong(for: librarySong) else { return false }
+        let driveSize = driveSong.header?.fileSize ?? 0
+        return librarySong.fileSize != driveSize
+    }
+
+    func matchingDriveSong(for librarySong: LibrarySong) -> DriveSong? {
         let libFilename = librarySong.url.lastPathComponent.lowercased()
         let libName = librarySong.songName.lowercased()
-        return driveSongs.contains { driveSong in
+        return driveSongs.first { driveSong in
             driveSong.filename.lowercased() == libFilename ||
             driveSong.displayName.lowercased() == libName
         }
@@ -104,30 +114,7 @@ struct DriveView: View {
             if !library.selectedSongs.isEmpty {
                 Section {
                     ForEach(library.selectedSongs) { song in
-                        HStack(spacing: 10) {
-                            let onDrive = driveContent.isSongOnDrive(song)
-                            Image(systemName: onDrive ? "checkmark.circle.fill" : "arrow.right.circle.dotted")
-                                .foregroundStyle(onDrive ? .green : .orange)
-                                .frame(width: 18)
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(song.songName)
-                                    .lineLimit(1)
-                                Text(song.artist)
-                                    .font(.caption)
-                                    .foregroundStyle(.secondary)
-                                    .lineLimit(1)
-                            }
-                            Spacer()
-                            Text(onDrive ? "On Drive" : "Pending Sync")
-                                .font(.caption)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(
-                                    (onDrive ? Color.green : Color.orange).opacity(0.12),
-                                    in: RoundedRectangle(cornerRadius: 4)
-                                )
-                                .foregroundStyle(onDrive ? .green : .orange)
-                        }
+                        SyncSongRow(song: song, driveContent: driveContent)
                     }
                 } header: {
                     let pending = library.selectedSongs.filter { !driveContent.isSongOnDrive($0) }.count
@@ -176,5 +163,54 @@ struct DriveView: View {
             }
         }
         .listStyle(.plain)
+    }
+}
+
+struct SyncSongRow: View {
+    let song: LibrarySong
+    @ObservedObject var driveContent: DriveContentManager
+
+    private var onDrive: Bool { driveContent.isSongOnDrive(song) }
+    private var needsResync: Bool { driveContent.songNeedsResync(song) }
+
+    private var statusLabel: String {
+        if needsResync { return "Updated" }
+        if onDrive { return "On Drive" }
+        return "Pending Sync"
+    }
+
+    private var statusColor: Color {
+        if needsResync { return .blue }
+        if onDrive { return .green }
+        return .orange
+    }
+
+    private var statusIcon: String {
+        if needsResync { return "arrow.triangle.2.circlepath" }
+        if onDrive { return "checkmark.circle.fill" }
+        return "arrow.right.circle.dotted"
+    }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: statusIcon)
+                .foregroundStyle(statusColor)
+                .frame(width: 18)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(song.songName)
+                    .lineLimit(1)
+                Text(song.artist)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Text(statusLabel)
+                .font(.caption)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(statusColor.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
+                .foregroundStyle(statusColor)
+        }
     }
 }
