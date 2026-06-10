@@ -86,6 +86,8 @@ class LibraryManager: ObservableObject {
             Self.scanFolder(folderURL)
         }.value
 
+        let validIDs = Set(songs.map(\.id))
+        selectedSongIDs = selectedSongIDs.intersection(validIDs)
         allSongs = songs
         buildGroups()
         detectDuplicates()
