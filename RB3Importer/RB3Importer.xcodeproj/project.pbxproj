@@ -13,6 +13,11 @@
 		4790BCB7253D4B03A3CF4139 /* DriveManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77F2A1C6EDAB4368A5AD4DF6 /* DriveManager.swift */; };
 		A5EAF324639E482A976BAB75 /* ImportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C93F390ADAEB4D0DB7F8085E /* ImportManager.swift */; };
 		1B1CD6BB90AD4E65BF905B4D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 3A72C6A8C2A9449CA594B94E /* Assets.xcassets */; };
+		AA11111111111111AAAAAAAA /* LibraryManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB11111111111111BBBBBBBB /* LibraryManager.swift */; };
+		AA22222222222222AAAAAAAA /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB22222222222222BBBBBBBB /* LibraryView.swift */; };
+		AA33333333333333AAAAAAAA /* DriveView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB33333333333333BBBBBBBB /* DriveView.swift */; };
+		AA44444444444444AAAAAAAA /* MetadataEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB44444444444444BBBBBBBB /* MetadataEditorView.swift */; };
+		AA55555555555555AAAAAAAA /* DuplicateResolverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB55555555555555BBBBBBBB /* DuplicateResolverView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -23,6 +28,11 @@
 		C93F390ADAEB4D0DB7F8085E /* ImportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportManager.swift; sourceTree = "<group>"; };
 		3A72C6A8C2A9449CA594B94E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		9E009F2A1E81439DB2435CDE /* RB3Importer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RB3Importer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BB11111111111111BBBBBBBB /* LibraryManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryManager.swift; sourceTree = "<group>"; };
+		BB22222222222222BBBBBBBB /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
+		BB33333333333333BBBBBBBB /* DriveView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriveView.swift; sourceTree = "<group>"; };
+		BB44444444444444BBBBBBBB /* MetadataEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetadataEditorView.swift; sourceTree = "<group>"; };
+		BB55555555555555BBBBBBBB /* DuplicateResolverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DuplicateResolverView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -44,6 +54,11 @@
 				23CCBC69B27948239CE12E63 /* STFSPackage.swift */,
 				77F2A1C6EDAB4368A5AD4DF6 /* DriveManager.swift */,
 				C93F390ADAEB4D0DB7F8085E /* ImportManager.swift */,
+				BB11111111111111BBBBBBBB /* LibraryManager.swift */,
+				BB22222222222222BBBBBBBB /* LibraryView.swift */,
+				BB33333333333333BBBBBBBB /* DriveView.swift */,
+				BB44444444444444BBBBBBBB /* MetadataEditorView.swift */,
+				BB55555555555555BBBBBBBB /* DuplicateResolverView.swift */,
 				3A72C6A8C2A9449CA594B94E /* Assets.xcassets */,
 			);
 			path = RB3Importer;
@@ -139,6 +154,11 @@
 				89365B21C7F54934B94CCE45 /* STFSPackage.swift in Sources */,
 				4790BCB7253D4B03A3CF4139 /* DriveManager.swift in Sources */,
 				A5EAF324639E482A976BAB75 /* ImportManager.swift in Sources */,
+				AA11111111111111AAAAAAAA /* LibraryManager.swift in Sources */,
+				AA22222222222222AAAAAAAA /* LibraryView.swift in Sources */,
+				AA33333333333333AAAAAAAA /* DriveView.swift in Sources */,
+				AA44444444444444AAAAAAAA /* MetadataEditorView.swift in Sources */,
+				AA55555555555555AAAAAAAA /* DuplicateResolverView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

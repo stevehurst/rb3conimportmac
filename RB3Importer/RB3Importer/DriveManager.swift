@@ -1,7 +1,7 @@
 import Foundation
 
 struct DriveInfo: Identifiable, Hashable {
-    let id: UUID
+    let id: String
     let url: URL
     let name: String
     let totalBytes: Int64
@@ -46,7 +46,7 @@ class DriveManager: ObservableObject {
             else { return nil }
 
             return DriveInfo(
-                id: UUID(),
+                id: url.path,
                 url: url,
                 name: name,
                 totalBytes: Int64(res.volumeTotalCapacity ?? 0),

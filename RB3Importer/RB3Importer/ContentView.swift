@@ -1,44 +1,64 @@
 import SwiftUI
-import UniformTypeIdentifiers
+import CryptoKit
+
+private let rb3BasePath = "Content/0000000000000000/45410914"
+private let contentCachePath = "Content/0000000000000000/FFFE07DF/00040000/ContentCache.pkg"
 
 struct ContentView: View {
-    @StateObject private var importManager = ImportManager()
+    @StateObject private var library = LibraryManager()
     @StateObject private var driveManager = DriveManager()
-    @State private var selectedDriveID: UUID?
-    @State private var isTargeted = false
+    @StateObject private var driveContent = DriveContentManager()
+    @State private var selectedDriveID: String?
+    @State private var selectedTab = 0
+    @State private var syncStatus: SyncStatus = .idle
 
     private var selectedDrive: DriveInfo? {
         driveManager.drives.first { $0.id == selectedDriveID }
     }
 
+    private var isSyncing: Bool {
+        if case .syncing = syncStatus { return true }
+        return false
+    }
+
     var body: some View {
+        mainContent
+            .frame(minWidth: 700, minHeight: 520)
+            .onAppear(perform: handleAppear)
+            .onChange(of: driveManager.drives, handleDrivesChanged)
+            .onChange(of: selectedDriveID, handleDriveSelected)
+            .onChange(of: driveContent.driveSongs) { _, _ in autoSelectSyncedSongs() }
+            .onChange(of: library.allSongs) { _, _ in autoSelectSyncedSongs() }
+    }
+
+    private var mainContent: some View {
         VStack(spacing: 0) {
-            driveBar
+            syncBar
             Divider()
-            dropZone
-            Divider()
-            bottomBar
-        }
-        .frame(minWidth: 600, minHeight: 440)
-        .onAppear { driveManager.refresh() }
-        .onChange(of: driveManager.drives) { _, drives in
-            // Auto-select the only Xbox drive if there's exactly one
-            if selectedDriveID == nil {
-                let xbox = drives.filter { $0.hasXboxContent }
-                if xbox.count == 1 { selectedDriveID = xbox[0].id }
-            }
+            tabContent
         }
     }
 
-    // MARK: - Drive bar
+    private var tabContent: some View {
+        TabView(selection: $selectedTab) {
+            LibraryView(library: library)
+                .tabItem { Label("Library", systemImage: "music.note.list") }
+                .tag(0)
 
-    var driveBar: some View {
-        HStack(spacing: 8) {
+            DriveView(library: library, driveContent: driveContent, selectedDrive: selectedDrive)
+                .tabItem { Label("Drive", systemImage: "externaldrive.fill") }
+                .tag(1)
+        }
+    }
+
+    private var syncBar: some View {
+        HStack(spacing: 10) {
+            // Drive picker
             Image(systemName: "externaldrive.fill")
                 .foregroundStyle(.secondary)
 
             Picker("", selection: $selectedDriveID) {
-                Text("Select Xbox 360 USB drive…").tag(nil as UUID?)
+                Text("Select Xbox 360 USB drive…").tag(nil as String?)
                 if !driveManager.drives.isEmpty {
                     Divider()
                     ForEach(driveManager.drives) { drive in
@@ -49,20 +69,15 @@ struct ContentView: View {
                                     .foregroundStyle(.green)
                             }
                         }
-                        .tag(drive.id as UUID?)
+                        .tag(drive.id as String?)
                     }
                 }
             }
             .labelsHidden()
-            .frame(maxWidth: 320)
+            .frame(maxWidth: 300)
 
             Button {
                 driveManager.refresh()
-                // Re-attempt auto-select after refresh
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                    let xbox = driveManager.drives.filter { $0.hasXboxContent }
-                    if xbox.count == 1 { selectedDriveID = xbox[0].id }
-                }
             } label: {
                 Image(systemName: "arrow.clockwise")
             }
@@ -71,240 +86,180 @@ struct ContentView: View {
 
             if let drive = selectedDrive {
                 if drive.hasXboxContent {
-                    Label("Xbox Content found", systemImage: "checkmark.circle.fill")
-                        .font(.caption)
+                    Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
+                        .font(.caption)
                 } else {
-                    Label("No Xbox Content folder", systemImage: "exclamationmark.triangle.fill")
-                        .font(.caption)
+                    Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
-                        .help("Configure this drive on your Xbox 360 first to create the Content folder")
+                        .font(.caption)
+                        .help("No Xbox Content folder — configure this drive on your Xbox 360 first")
                 }
             }
 
             Spacer()
 
-            if !importManager.songs.isEmpty {
-                Button("Clear") {
-                    importManager.reset()
+            // Sync status
+            syncStatusView
+
+            // Sync button
+            Button {
+                guard let drive = selectedDrive else { return }
+                Task { await syncToDrive(drive.url) }
+            } label: {
+                if isSyncing {
+                    HStack(spacing: 6) {
+                        ProgressView().scaleEffect(0.6)
+                        Text("Syncing…")
+                    }
+                    .frame(minWidth: 100)
+                } else {
+                    Label("Sync to Drive", systemImage: "arrow.right.circle")
+                        .frame(minWidth: 100)
                 }
-                .foregroundStyle(.secondary)
             }
+            .buttonStyle(.borderedProminent)
+            .disabled(selectedDrive == nil || library.selectedSongs.isEmpty || isSyncing)
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
     }
 
-    // MARK: - Drop zone
-
-    var dropZone: some View {
-        ZStack {
-            if importManager.songs.isEmpty {
-                emptyState
+    @ViewBuilder
+    private var syncStatusView: some View {
+        switch syncStatus {
+        case .idle:
+            if library.selectedSongs.isEmpty {
+                Text("No songs selected")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
             } else {
-                songList
+                let pending = library.selectedSongs.filter { !driveContent.isSongOnDrive($0) }.count
+                let onDrive = library.selectedSongs.count - pending
+                HStack(spacing: 6) {
+                    if onDrive > 0 {
+                        Label("\(onDrive) on drive", systemImage: "checkmark.circle")
+                            .foregroundStyle(.green)
+                    }
+                    if pending > 0 {
+                        Label("\(pending) pending", systemImage: "arrow.right.circle.dotted")
+                            .foregroundStyle(.orange)
+                    }
+                }
+                .font(.caption)
             }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(isTargeted ? Color.accentColor.opacity(0.08) : Color(NSColor.controlBackgroundColor))
-        .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .strokeBorder(
-                    isTargeted ? Color.accentColor : Color.clear,
-                    style: StrokeStyle(lineWidth: 2, dash: [6])
-                )
-                .padding(4)
-        )
-        .onDrop(of: [.fileURL], isTargeted: $isTargeted, perform: handleDrop)
-    }
-
-    var emptyState: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "arrow.down.doc.fill")
-                .font(.system(size: 52))
-                .foregroundStyle(.tertiary)
-            Text("Drop .rb3con files here")
-                .font(.title2)
-                .foregroundStyle(.secondary)
-            Text("Custom Rock Band 3 CON packages for Xbox 360")
-                .font(.callout)
-                .foregroundStyle(.tertiary)
-            Button("Add Files…") { openFilePicker() }
-                .padding(.top, 4)
-        }
-    }
-
-    var songList: some View {
-        List {
-            ForEach(importManager.songs) { song in
-                SongRow(song: song) { importManager.remove(song.id) }
+        case .syncing(let copied, let total):
+            HStack(spacing: 6) {
+                ProgressView().scaleEffect(0.6)
+                Text("Syncing \(copied)/\(total)…")
             }
-        }
-        .listStyle(.plain)
-        .overlay(alignment: .bottomTrailing) {
-            Button("Add Files…") { openFilePicker() }
-                .padding(12)
-        }
-    }
-
-    // MARK: - Bottom bar
-
-    var bottomBar: some View {
-        HStack(spacing: 16) {
-            statsView
-            Spacer()
-            importButton
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-    }
-
-    @ViewBuilder var statsView: some View {
-        if importManager.copied > 0 || importManager.errors > 0 || importManager.skipped > 0 {
-            HStack(spacing: 12) {
-                if importManager.copied > 0 {
-                    Label("\(importManager.copied) copied", systemImage: "checkmark.circle.fill")
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        case .done(let copied, let skipped, let errors):
+            HStack(spacing: 8) {
+                if copied > 0 {
+                    Label("\(copied) synced", systemImage: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                 }
-                if importManager.skipped > 0 {
-                    Label("\(importManager.skipped) skipped", systemImage: "minus.circle")
+                if skipped > 0 {
+                    Label("\(skipped) skipped", systemImage: "minus.circle")
                         .foregroundStyle(.secondary)
                 }
-                if importManager.errors > 0 {
-                    Label("\(importManager.errors) failed", systemImage: "xmark.circle.fill")
+                if errors > 0 {
+                    Label("\(errors) failed", systemImage: "xmark.circle.fill")
                         .foregroundStyle(.red)
                 }
             }
-            .font(.callout)
-        } else if !importManager.songs.isEmpty {
-            Text("\(importManager.readyCount) of \(importManager.songs.count) file\(importManager.songs.count == 1 ? "" : "s") ready")
-                .foregroundStyle(.secondary)
-                .font(.callout)
-        }
-    }
-
-    var importButton: some View {
-        Button {
-            guard let drive = selectedDrive else { return }
-            Task { await importManager.importAll(to: drive.url) }
-        } label: {
-            if importManager.isImporting {
-                HStack(spacing: 6) {
-                    ProgressView().scaleEffect(0.75)
-                    Text("Importing…")
-                }
-                .frame(minWidth: 110)
-            } else {
-                Text("Import to Drive")
-                    .frame(minWidth: 110)
-            }
-        }
-        .buttonStyle(.borderedProminent)
-        .controlSize(.large)
-        .disabled(selectedDrive == nil || importManager.readyCount == 0 || importManager.isImporting)
-    }
-
-    // MARK: - Helpers
-
-    @discardableResult
-    func handleDrop(_ providers: [NSItemProvider]) -> Bool {
-        for provider in providers {
-            provider.loadDataRepresentation(forTypeIdentifier: UTType.fileURL.identifier) { data, _ in
-                guard let data,
-                      let str = String(data: data, encoding: .utf8),
-                      let url = URL(string: str) else { return }
-                DispatchQueue.main.async { importManager.addFiles([url]) }
-            }
-        }
-        return true
-    }
-
-    func openFilePicker() {
-        let panel = NSOpenPanel()
-        panel.title = "Select Rock Band 3 CON files"
-        panel.allowsMultipleSelection = true
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.begin { response in
-            guard response == .OK else { return }
-            importManager.addFiles(panel.urls)
-        }
-    }
-}
-
-// MARK: - Song Row
-
-struct SongRow: View {
-    let song: SongEntry
-    let onRemove: () -> Void
-
-    var body: some View {
-        HStack(spacing: 10) {
-            statusIcon
-            info
-            Spacer()
-            if let header = song.header {
-                typeTag(header.contentTypeName)
-            }
-            statusText
-            if !song.status.isTerminal && song.status != .copying {
-                removeButton
-            }
-        }
-        .padding(.vertical, 3)
-    }
-
-    var statusIcon: some View {
-        Image(systemName: song.status.iconName)
-            .foregroundStyle(statusColor)
-            .frame(width: 18)
-    }
-
-    var info: some View {
-        VStack(alignment: .leading, spacing: 1) {
-            Text(song.displayName)
-                .lineLimit(1)
-            Text(song.filename)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-                .lineLimit(1)
-        }
-    }
-
-    func typeTag(_ label: String) -> some View {
-        Text(label)
-            .font(.caption2)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 2)
-            .background(.secondary.opacity(0.12), in: RoundedRectangle(cornerRadius: 4))
-    }
-
-    var statusText: some View {
-        Text(song.status.label)
             .font(.caption)
-            .foregroundStyle(statusColor)
-            .lineLimit(1)
-            .frame(minWidth: 70, alignment: .trailing)
+        }
     }
 
-    var removeButton: some View {
-        Button(action: onRemove) {
-            Image(systemName: "xmark")
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-        }
-        .buttonStyle(.plain)
+    private func handleAppear() {
+        driveManager.refresh()
     }
 
-    var statusColor: Color {
-        switch song.status {
-        case .pending:  return .secondary
-        case .ready:    return .green
-        case .copying:  return .blue
-        case .copied:   return .green
-        case .skipped:  return .secondary
-        case .failed:   return .red
+    private func handleDrivesChanged(_: [DriveInfo], _ drives: [DriveInfo]) {
+        if selectedDriveID == nil {
+            let xbox = drives.filter { $0.hasXboxContent }
+            if xbox.count == 1 { selectedDriveID = xbox[0].id }
         }
+    }
+
+    private func handleDriveSelected(_: String?, _: String?) {
+        if let drive = selectedDrive {
+            Task { await driveContent.scan(driveURL: drive.url) }
+        } else {
+            driveContent.driveSongs = []
+        }
+    }
+
+    private func autoSelectSyncedSongs() {
+        for song in library.allSongs where driveContent.isSongOnDrive(song) {
+            library.selectedSongIDs.insert(song.id)
+        }
+    }
+
+    private func syncToDrive(_ driveURL: URL) async {
+        let songsToSync = library.selectedSongs.filter { !driveContent.isSongOnDrive($0) }
+        guard !songsToSync.isEmpty else {
+            syncStatus = .done(copied: 0, skipped: library.selectedSongs.count, errors: 0)
+            return
+        }
+
+        var copied = 0, skipped = 0, errors = 0
+        let total = songsToSync.count
+        syncStatus = .syncing(copied: 0, total: total)
+
+        let destDir = driveURL.appendingPathComponent(rb3BasePath).appendingPathComponent("00000001")
+
+        for song in songsToSync {
+            let destName = song.url.lastPathComponent.count > 42
+                ? String(song.url.lastPathComponent.prefix(42))
+                : song.url.lastPathComponent
+            let destFile = destDir.appendingPathComponent(destName)
+
+            if FileManager.default.fileExists(atPath: destFile.path) {
+                let srcSize = (try? song.url.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? -1
+                let dstSize = (try? destFile.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? -2
+                if srcSize == dstSize {
+                    skipped += 1
+                    syncStatus = .syncing(copied: copied, total: total)
+                    continue
+                }
+            }
+
+            do {
+                try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+                let data = try await Task.detached(priority: .userInitiated) {
+                    try Data(contentsOf: song.url)
+                }.value
+                try await Task.detached(priority: .userInitiated) {
+                    try data.write(to: destFile, options: .atomic)
+                }.value
+                let written = try await Task.detached(priority: .userInitiated) {
+                    try Data(contentsOf: destFile)
+                }.value
+                guard SHA256.hash(data: data) == SHA256.hash(data: written) else {
+                    try? FileManager.default.removeItem(at: destFile)
+                    errors += 1
+                    continue
+                }
+                copied += 1
+                syncStatus = .syncing(copied: copied, total: total)
+            } catch {
+                errors += 1
+            }
+        }
+
+        if let contents = try? FileManager.default.contentsOfDirectory(at: destDir, includingPropertiesForKeys: nil) {
+            for url in contents where url.lastPathComponent.hasPrefix("._") {
+                try? FileManager.default.removeItem(at: url)
+            }
+        }
+        let cache = driveURL.appendingPathComponent(contentCachePath)
+        try? FileManager.default.removeItem(at: cache)
+
+        await driveContent.scan(driveURL: driveURL)
+        syncStatus = .done(copied: copied, skipped: skipped, errors: errors)
     }
 }

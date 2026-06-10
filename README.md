@@ -1,8 +1,8 @@
-# RB3 Importer
+# RB3 Custom Song Manager and Remote Storage Importer for Mac
 
-A macOS tool for adding custom Rock Band 3 songs (.rb3con files) to an Xbox 360 USB drive — no Windows required.
+A macOS app for managing a local library of custom Rock Band 3 songs and syncing them to an Xbox 360 USB drive — no Windows required.
 
-Available as a native drag-and-drop macOS app and a Python CLI script.
+Also includes a Python CLI script for quick imports.
 
 ---
 
@@ -10,7 +10,7 @@ Available as a native drag-and-drop macOS app and a Python CLI script.
 
 Every existing method for managing Rock Band 3 custom content on Xbox 360 requires Windows — C3 CON Tools, Horizon, Modio. Velocity (a cross-platform option) no longer supports the FAT32 format Xbox 360 has used for USB drives for years.
 
-This tool fills that gap for macOS users.
+This tool fills that gap for macOS users, adding library management and metadata editing on top of basic file import.
 
 ---
 
@@ -29,27 +29,39 @@ This tool fills that gap for macOS users.
 
 > **First launch:** macOS may block the app since it isn't notarized. Right-click → Open to bypass Gatekeeper.
 
-### How to use
+### Library Tab
 
-1. Open **RB3Importer.app**
-2. Plug in your Xbox 360 USB drive — the app will detect it automatically if it has the Xbox `Content/` folder structure
-3. Drag your `.rb3con` files into the window (or click **Add Files…**)
-4. Click **Import to Drive**
+The app opens to the **Library** tab. Select a local folder containing your `.rb3con` files and the app will scan it and display your songs grouped by artist, with collapsible sections.
 
-The app will:
-- Validate each file is a genuine RB3 CON package (checks STFS magic bytes and Title ID)
-- Copy files to the correct folder on the drive (`Content/0000000000000000/45410914/00000001/`)
-- Verify each copy with a SHA-256 integrity check
-- Clean up macOS `._` AppleDouble metadata files that accumulate on FAT32 drives
-- Delete `ContentCache.pkg` so the Xbox rebuilds its content index on next boot
+- **Search** songs by name, artist, or album
+- **Select songs** individually or use Select All to mark them for syncing
+- **Edit metadata** — click the pencil icon on any song to edit its name, artist, album, and artwork (writes directly to the STFS header)
+- **Duplicate detection** — when scanning, the app detects duplicate songs (same name and artist) and prompts you to keep the most complete version (largest file size)
+- **Drag and drop** — drop `.rb3con` files onto the Library tab to copy them into your library folder
+
+### Drive Tab
+
+Switch to the **Drive** tab to see what's currently on your Xbox 360 USB drive, sorted by artist. You can remove individual songs from the drive here.
+
+The Drive tab also shows your selected library songs with their sync status — whether each one is already on the drive or pending sync.
+
+### Syncing
+
+The drive selector and **Sync to Drive** button sit above both tabs so you can see sync status from either view. When a drive is connected:
+
+- Songs already on the drive are automatically checked in your library
+- Select additional songs in the Library tab, then click **Sync to Drive**
+- Each file is validated, copied to the correct Xbox 360 folder, and verified with a SHA-256 integrity check
+- macOS `._` metadata files are cleaned up automatically
+- `ContentCache.pkg` is deleted so the Xbox rebuilds its content index on next boot
 
 ### Building from source
 
 Requires Xcode 14 or later.
 
 ```bash
-git clone https://github.com/yourusername/rb3importer.git
-cd rb3importer/RB3Importer
+git clone https://github.com/stevehurst/rb3conimportmac.git
+cd rb3conimportmac/RB3Importer
 open RB3Importer.xcodeproj
 ```
 
@@ -154,7 +166,10 @@ Custom songs are **CON** packages (console-signed, content type `0x00000001`). O
 | `0x000` | 4 B | Magic (`CON `, `LIVE`, or `PIRS`) |
 | `0x344` | 4 B | Content Type (big-endian uint32) |
 | `0x360` | 4 B | Title ID — `0x45410914` for RB3 |
-| `0x411` | 128 B | Display Name (UTF-16BE) |
+| `0x411` | 0x900 B | Display Name (UTF-16BE, 18 locales × 128 B) |
+| `0xD11` | 0x900 B | Display Description (UTF-16BE, 18 locales × 128 B) |
+| `0x1712` | 4 B | Thumbnail Image Size |
+| `0x171A` | 0x4000 B | Thumbnail Image Data (PNG/JPEG) |
 
 ---
 
@@ -168,24 +183,30 @@ Custom songs are **CON** packages (console-signed, content type `0x00000001`). O
 | App blocked on launch | Unsigned / not notarized | Right-click → Open |
 | macOS `._` files on drive | macOS writes metadata to FAT32 volumes | Both tools clean these automatically |
 | Songs missing after 256 | Xbox 360 folder file limit | Use a second USB drive |
+| All songs show "Unknown Artist" | Description field empty in STFS header | Edit metadata in the app using the pencil icon |
 
 ---
 
 ## Project Structure
 
 ```
-rb3importer/
-  RB3Importer.app/        Pre-built macOS app
-  RB3Importer/            Xcode project
+rb3conimportmac/
+  RB3Importer.app/              Pre-built macOS app
+  RB3Importer/                  Xcode project
     RB3Importer.xcodeproj/
     RB3Importer/
-      RB3ImporterApp.swift
-      ContentView.swift
-      STFSPackage.swift   STFS header parsing
-      DriveManager.swift  Removable drive detection
-      ImportManager.swift Import orchestration + integrity check
-  RB3_TU4/                Rock Band 3 Title Update 4
-  rb3import.py            Python CLI
+      RB3ImporterApp.swift      App entry point
+      ContentView.swift         Tab shell, drive picker, sync controls
+      LibraryView.swift         Library tab — artist groups, search, selection
+      LibraryManager.swift      Library scanning, grouping, duplicate detection
+      DriveView.swift           Drive tab — drive contents, sync status
+      DriveManager.swift        Removable drive detection
+      ImportManager.swift       Legacy import orchestration
+      STFSPackage.swift         STFS header parsing and metadata writing
+      MetadataEditorView.swift  Song metadata editor sheet
+      DuplicateResolverView.swift  Duplicate resolution UI
+  RB3_TU4/                     Rock Band 3 Title Update 4
+  rb3import.py                  Python CLI
   README.md
 ```
 
