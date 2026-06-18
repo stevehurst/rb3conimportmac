@@ -263,11 +263,12 @@ struct ContentView: View {
             }
         }
 
-        if let contents = try? FileManager.default.contentsOfDirectory(at: destDir, includingPropertiesForKeys: nil) {
-            for url in contents where url.lastPathComponent.hasPrefix("._") {
-                try? FileManager.default.removeItem(at: url)
-            }
-        }
+        let rb3Root = driveURL.appendingPathComponent(rb3BasePath)
+        let dotClean = Process()
+        dotClean.executableURL = URL(fileURLWithPath: "/usr/bin/dot_clean")
+        dotClean.arguments = ["-m", rb3Root.path]
+        try? dotClean.run()
+        dotClean.waitUntilExit()
         let cache = driveURL.appendingPathComponent(contentCachePath)
         try? FileManager.default.removeItem(at: cache)
 

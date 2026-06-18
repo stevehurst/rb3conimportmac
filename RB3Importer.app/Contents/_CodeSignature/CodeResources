@@ -15,6 +15,24 @@
 	</dict>
 	<key>files2</key>
 	<dict>
+		<key>MacOS/RB3Importer.debug.dylib</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			UDQhI5zedc2nTbMlmlrJ/DRq8RE=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"503421239cde75cda74db3259a5ac9fc346af111"</string>
+		</dict>
+		<key>MacOS/__preview.dylib</key>
+		<dict>
+			<key>cdhash</key>
+			<data>
+			c/kSQigpRdSU+DE3UTHEcO7vfKY=
+			</data>
+			<key>requirement</key>
+			<string>cdhash H"73f91242282945d494f831375131c470eeef7ca6"</string>
+		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
 			<key>hash2</key>
