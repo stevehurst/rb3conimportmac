@@ -1,83 +1,66 @@
 import SwiftUI
 import AppKit
 
-struct MetadataEditorView: View {
+struct SongInfoView: View {
     let song: LibrarySong
-    let onSave: () -> Void
-
-    @State private var songName: String
-    @State private var artist: String
-    @State private var artworkImage: NSImage?
-    @State private var newThumbnailData: Data?
-    @State private var isSaving = false
-    @State private var errorMessage: String?
 
     @Environment(\.dismiss) private var dismiss
-
-    init(song: LibrarySong, onSave: @escaping () -> Void) {
-        self.song = song
-        self.onSave = onSave
-        _songName = State(initialValue: song.header.displayName)
-        _artist = State(initialValue: song.header.displayDescription)
-        _artworkImage = State(initialValue: song.header.thumbnailImage)
-    }
 
     var body: some View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    TextField("Display Name (Artist - Song Name)", text: $songName)
-                    TextField("Description", text: $artist)
+                    if let info = song.header.songInfo {
+                        infoRow("Track", info.trackName)
+                        infoRow("Artist", info.artist)
+                        if !info.albumName.isEmpty { infoRow("Album", info.albumName) }
+                        if !info.yearReleased.isEmpty { infoRow("Year", info.yearReleased) }
+                        if !info.genre.isEmpty { infoRow("Genre", info.genre.capitalized) }
+                        if !info.songLength.isEmpty { infoRow("Length", info.songLength) }
+                    } else {
+                        Text("Could not read encoded song data")
+                            .foregroundStyle(.tertiary)
+                            .italic()
+                    }
                 } header: {
-                    Text("Song Information")
+                    Text("Rock Band Song Data")
                 } footer: {
-                    Text("These fields are for file identification only — they appear in the Xbox 360 dashboard but do not affect gameplay.")
+                    Text("Encoded in the song package — displayed in Rock Band 3 during gameplay.")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }
 
-                Section("Artwork") {
-                    HStack(spacing: 16) {
-                        if let image = artworkImage {
+                Section {
+                    infoRow("Display Name", song.header.displayName)
+                    if !song.header.displayDescription.isEmpty {
+                        infoRow("Description", song.header.displayDescription)
+                    }
+                    if let image = song.header.thumbnailImage {
+                        HStack {
+                            Text("Thumbnail")
+                                .foregroundStyle(.secondary)
+                                .frame(width: 90, alignment: .trailing)
                             Image(nsImage: image)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: 128, height: 128)
-                                .cornerRadius(8)
-                                .shadow(radius: 2)
-                        } else {
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.secondary.opacity(0.15))
-                                .frame(width: 128, height: 128)
-                                .overlay {
-                                    Image(systemName: "music.note")
-                                        .font(.system(size: 40))
-                                        .foregroundStyle(.tertiary)
-                                }
-                        }
-
-                        VStack(alignment: .leading, spacing: 8) {
-                            Button("Choose Image…") { pickArtwork() }
-                            if artworkImage != nil {
-                                Button("Remove Artwork") {
-                                    artworkImage = nil
-                                    newThumbnailData = Data()
-                                }
-                                .foregroundStyle(.red)
-                            }
-                            Text("PNG or JPEG, max 64x64 recommended")
-                                .font(.caption)
-                                .foregroundStyle(.tertiary)
+                                .frame(width: 64, height: 64)
+                                .cornerRadius(6)
                         }
                     }
-                    .padding(.vertical, 4)
+                } header: {
+                    Text("File Metadata")
+                } footer: {
+                    Text("Shown in the Xbox 360 dashboard file browser.")
+                        .font(.caption2)
+                        .foregroundStyle(.tertiary)
                 }
 
-                if let err = errorMessage {
-                    Section {
-                        Label(err, systemImage: "exclamationmark.triangle.fill")
-                            .foregroundStyle(.red)
-                    }
+                Section {
+                    infoRow("Filename", song.url.lastPathComponent)
+                    infoRow("File Size", song.fileSizeFormatted)
+                    infoRow("Package Type", song.header.contentTypeName)
+                } header: {
+                    Text("File Info")
                 }
             }
             .formStyle(.grouped)
@@ -85,54 +68,22 @@ struct MetadataEditorView: View {
             Divider()
 
             HStack {
-                Button("Cancel") { dismiss() }
+                Spacer()
+                Button("Close") { dismiss() }
                     .keyboardShortcut(.cancelAction)
-                Spacer()
-                Text(song.fileSizeFormatted)
-                    .font(.caption)
-                    .foregroundStyle(.tertiary)
-                Spacer()
-                Button("Save") { save() }
-                    .keyboardShortcut(.defaultAction)
-                    .buttonStyle(.borderedProminent)
-                    .disabled(isSaving)
             }
             .padding()
         }
         .frame(minWidth: 450, minHeight: 400)
     }
 
-    private func pickArtwork() {
-        let panel = NSOpenPanel()
-        panel.title = "Select Artwork Image"
-        panel.allowedContentTypes = [.png, .jpeg]
-        panel.allowsMultipleSelection = false
-        panel.canChooseDirectories = false
-        panel.begin { response in
-            guard response == .OK, let url = panel.url,
-                  let image = NSImage(contentsOf: url),
-                  let data = try? Data(contentsOf: url) else { return }
-            artworkImage = image
-            newThumbnailData = data
-        }
-    }
-
-    private func save() {
-        isSaving = true
-        errorMessage = nil
-
-        do {
-            try writeSTFSMetadata(
-                to: song.url,
-                displayName: songName,
-                description: artist,
-                thumbnail: newThumbnailData
-            )
-            onSave()
-            dismiss()
-        } catch {
-            errorMessage = error.localizedDescription
-            isSaving = false
+    private func infoRow(_ label: String, _ value: String) -> some View {
+        HStack {
+            Text(label)
+                .foregroundStyle(.secondary)
+                .frame(width: 90, alignment: .trailing)
+            Text(value)
+                .textSelection(.enabled)
         }
     }
 }

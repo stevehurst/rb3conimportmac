@@ -29,3 +29,4 @@ DerivedData/
 # Personal song files — add your own .rb3con files, don't commit them
 RB3\ Songs/
 *.rb3con
+/RB3_Songs

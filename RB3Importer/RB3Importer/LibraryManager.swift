@@ -9,6 +9,7 @@ struct LibrarySong: Identifiable, Hashable {
     var isSelected: Bool = false
 
     var songName: String { header.displayName }
+    var trackName: String { header.trackName }
     var artist: String { header.artist }
     var album: String { header.album }
     var fileSize: UInt64 { header.fileSize }
@@ -179,7 +180,7 @@ class LibraryManager: ObservableObject {
                 modificationDate: res.contentModificationDate
             ))
         }
-        return songs.sorted { $0.songName.localizedCaseInsensitiveCompare($1.songName) == .orderedAscending }
+        return songs.sorted { $0.trackName.localizedCaseInsensitiveCompare($1.trackName) == .orderedAscending }
     }
 
     private func buildGroups() {
@@ -187,7 +188,7 @@ class LibraryManager: ObservableObject {
         artistGroups = grouped.map { group in
             ArtistGroup(
                 artist: group.key,
-                songs: group.value.sorted { $0.songName.localizedCaseInsensitiveCompare($1.songName) == .orderedAscending }
+                songs: group.value.sorted { $0.trackName.localizedCaseInsensitiveCompare($1.trackName) == .orderedAscending }
             )
         }
         .sorted { $0.artist.localizedCaseInsensitiveCompare($1.artist) == .orderedAscending }
@@ -229,14 +230,6 @@ class LibraryManager: ObservableObject {
 
     func deselectAll() {
         selectedSongIDs.removeAll()
-    }
-
-    func refreshSong(at url: URL) {
-        guard let idx = allSongs.firstIndex(where: { $0.url == url }),
-              let header = try? parseSTFSHeader(from: url) else { return }
-        let modDate = (try? url.resourceValues(forKeys: [.contentModificationDateKey]))?.contentModificationDate
-        allSongs[idx] = LibrarySong(id: allSongs[idx].id, url: url, header: header, modificationDate: modDate)
-        buildGroups()
     }
 
     func addFiles(_ urls: [URL]) {

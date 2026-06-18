@@ -12,7 +12,7 @@ struct LibraryView: View {
         if searchText.isEmpty { return library.artistGroups }
         return library.artistGroups.compactMap { group in
             let filtered = group.songs.filter {
-                $0.songName.localizedCaseInsensitiveContains(searchText) ||
+                $0.trackName.localizedCaseInsensitiveContains(searchText) ||
                 $0.artist.localizedCaseInsensitiveContains(searchText) ||
                 $0.album.localizedCaseInsensitiveContains(searchText)
             }
@@ -40,9 +40,7 @@ struct LibraryView: View {
             return true
         }
         .sheet(item: $editingSong) { song in
-            MetadataEditorView(song: song) {
-                library.refreshSong(at: song.url)
-            }
+            SongInfoView(song: song)
         }
         .sheet(isPresented: $showDuplicates) {
             DuplicateResolverView(
@@ -186,7 +184,7 @@ struct LibraryView: View {
                             song: song,
                             isSelected: library.selectedSongIDs.contains(song.id),
                             onToggle: { library.toggleSelection(song.id) },
-                            onEdit: { editingSong = song }
+                            onInfo: { editingSong = song }
                         )
                     }
                 } label: {
@@ -234,7 +232,7 @@ struct LibrarySongRow: View {
     let song: LibrarySong
     let isSelected: Bool
     let onToggle: () -> Void
-    let onEdit: () -> Void
+    let onInfo: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -244,25 +242,8 @@ struct LibrarySongRow: View {
             }
             .buttonStyle(.plain)
 
-            if let image = song.header.thumbnailImage {
-                Image(nsImage: image)
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .frame(width: 32, height: 32)
-                    .cornerRadius(4)
-            } else {
-                RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.secondary.opacity(0.1))
-                    .frame(width: 32, height: 32)
-                    .overlay {
-                        Image(systemName: "music.note")
-                            .font(.caption)
-                            .foregroundStyle(.tertiary)
-                    }
-            }
-
             VStack(alignment: .leading, spacing: 1) {
-                Text(song.songName)
+                Text(song.trackName)
                     .lineLimit(1)
                 if !song.album.isEmpty {
                     Text(song.album)
@@ -274,17 +255,13 @@ struct LibrarySongRow: View {
 
             Spacer()
 
-            Text(song.fileSizeFormatted)
-                .font(.caption)
-                .foregroundStyle(.tertiary)
-
-            Button { onEdit() } label: {
-                Image(systemName: "pencil")
+            Button { onInfo() } label: {
+                Image(systemName: "info.circle")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .help("Edit metadata")
+            .help("Song info & metadata")
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())

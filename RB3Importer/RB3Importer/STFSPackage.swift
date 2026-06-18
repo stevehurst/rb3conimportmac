@@ -6,15 +6,12 @@ enum STFSError: LocalizedError {
     case invalidMagic(String)
     case wrongTitleID(UInt32)
     case unknownContentType(UInt32)
-    case writeError(String)
-
     var errorDescription: String? {
         switch self {
         case .fileTooSmall: return "File too small to be a valid STFS package"
         case .invalidMagic(let m): return "Not an STFS package (magic: '\(m)')"
         case .wrongTitleID(let id): return "Wrong Title ID \(String(format: "%08X", id)), expected RB3 (45410914)"
         case .unknownContentType(let ct): return "Unknown content type \(String(format: "%08X", ct))"
-        case .writeError(let msg): return "Failed to write metadata: \(msg)"
         }
     }
 }
@@ -27,6 +24,7 @@ struct STFSHeader {
     let displayDescription: String
     let thumbnailData: Data?
     let fileSize: UInt64
+    var songInfo: RB3SongInfo?
 
     static let rb3TitleID: UInt32 = 0x45410914
 
@@ -59,19 +57,34 @@ struct STFSHeader {
     var isRB3: Bool { titleID == Self.rb3TitleID }
 
     var artist: String {
+        if let si = songInfo, !si.artist.isEmpty { return si.artist }
         let parsed = Self.parseArtistAndAlbum(from: displayDescription, displayName: displayName)
         return parsed.artist ?? "Unknown Artist"
     }
 
     var album: String {
-        let parsed = Self.parseArtistAndAlbum(from: displayDescription, displayName: displayName)
-        return parsed.album ?? ""
+        if let si = songInfo, !si.albumName.isEmpty { return si.albumName }
+        return ""
+    }
+
+    var trackName: String {
+        if let si = songInfo, !si.trackName.isEmpty { return si.trackName }
+        // Fall back to display name, stripping "Artist - " prefix
+        let name = displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        for sep in [" – ", " - "] {
+            if let range = name.range(of: sep) {
+                let after = String(name[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+                if !after.isEmpty { return after }
+            }
+        }
+        return displayName
     }
 
     var thumbnailImage: NSImage? {
         guard let data = thumbnailData, !data.isEmpty else { return nil }
         return NSImage(data: data)
     }
+
 
     static func parseArtistAndAlbum(from description: String, displayName: String = "") -> (artist: String?, album: String?) {
         let name = displayName.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines.union(.init(charactersIn: "\"")))
@@ -118,6 +131,11 @@ func parseSTFSHeader(from url: URL) throws -> STFSHeader {
 
     let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map { UInt64($0) } ?? 0
 
+    var songInfo: RB3SongInfo? = nil
+    if let dtaData = extractFileFromSTFS(data: data, matching: { $0.lowercased().hasSuffix(".dta") }) {
+        songInfo = parseRB3SongInfo(from: dtaData)
+    }
+
     return STFSHeader(
         magic: magic,
         contentType: contentType,
@@ -125,46 +143,194 @@ func parseSTFSHeader(from url: URL) throws -> STFSHeader {
         displayName: displayName,
         displayDescription: displayDescription,
         thumbnailData: thumbnailData,
-        fileSize: fileSize
+        fileSize: fileSize,
+        songInfo: songInfo
     )
 }
 
-func writeSTFSMetadata(to url: URL, displayName: String, description: String, thumbnail: Data?) throws {
-    var data = try Data(contentsOf: url)
-    guard data.count >= 0x500 else { throw STFSError.fileTooSmall }
+// MARK: - STFS File Extraction
 
-    // Write display name to all 18 locale slots
-    let nameSlotSize = STFSHeader.displayNameMaxBytes
-    for i in 0..<18 {
-        let offset = STFSHeader.displayNameOffset + (i * nameSlotSize)
-        guard offset + nameSlotSize <= data.count else { break }
-        data.writeUTF16BEString(displayName, at: offset, maxBytes: nameSlotSize)
+struct STFSFileEntry {
+    let filename: String
+    let isDirectory: Bool
+    let isConsecutive: Bool
+    let numBlocks: Int
+    let startingBlock: Int
+    let fileSize: Int
+}
+
+func extractFileFromSTFS(data: Data, matching predicate: (String) -> Bool) -> Data? {
+    let magic = String(bytes: data[0..<4], encoding: .ascii)?.trimmingCharacters(in: .whitespaces) ?? ""
+    let headerSize = magic == "CON" ? 0xB000 : 0xA000
+
+    guard data.count > headerSize else { return nil }
+
+    let ftBlockCount = Int(data.readUInt16LE(at: 0x37C))
+    let ftStartBlock = data.readInt24LE(at: 0x37E)
+
+    guard ftBlockCount > 0 else { return nil }
+
+    func blockToOffset(_ block: Int) -> Int {
+        var hashBlocksBefore = (block / 170) + 1
+        if block >= 170 {
+            hashBlocksBefore += (block / (170 * 170)) + 1
+        }
+        let backingBlock = block + hashBlocksBefore
+        return headerSize + (backingBlock * 0x1000)
     }
 
-    // Write description to all 18 locale slots
-    let descSlotSize = STFSHeader.descriptionMaxBytes
-    for i in 0..<18 {
-        let offset = STFSHeader.descriptionOffset + (i * descSlotSize)
-        guard offset + descSlotSize <= data.count else { break }
-        data.writeUTF16BEString(description, at: offset, maxBytes: descSlotSize)
-    }
+    var entries: [STFSFileEntry] = []
+    for tableIdx in 0..<ftBlockCount {
+        let tableOffset = blockToOffset(ftStartBlock + tableIdx)
+        guard tableOffset + 0x1000 <= data.count else { break }
 
-    if let thumb = thumbnail, data.count >= STFSHeader.thumbnailDataOffset + STFSHeader.thumbnailMaxBytes {
-        let clampedSize = min(thumb.count, STFSHeader.thumbnailMaxBytes)
-        data.writeUInt32BE(UInt32(clampedSize), at: STFSHeader.thumbnailSizeOffset)
-        let thumbRange = STFSHeader.thumbnailDataOffset..<(STFSHeader.thumbnailDataOffset + clampedSize)
-        data.replaceSubrange(thumbRange, with: thumb[0..<clampedSize])
-        if clampedSize < STFSHeader.thumbnailMaxBytes {
-            let zeroFill = Data(count: STFSHeader.thumbnailMaxBytes - clampedSize)
-            let fillRange = (STFSHeader.thumbnailDataOffset + clampedSize)..<(STFSHeader.thumbnailDataOffset + STFSHeader.thumbnailMaxBytes)
-            data.replaceSubrange(fillRange, with: zeroFill)
+        for i in 0..<64 {
+            let entryOffset = tableOffset + (i * 0x40)
+            guard entryOffset + 0x40 <= data.count else { break }
+
+            let flagsByte = data[entryOffset + 0x28]
+            let nameLen = Int(flagsByte & 0x3F)
+            guard nameLen > 0 else { continue }
+
+            let nameData = data[entryOffset..<(entryOffset + min(nameLen, 0x28))]
+            let filename = String(bytes: nameData, encoding: .ascii)?
+                .trimmingCharacters(in: .controlCharacters) ?? ""
+            guard !filename.isEmpty else { continue }
+
+            let isDirectory = (flagsByte & 0x40) != 0
+            let isConsecutive = (flagsByte & 0x80) != 0
+            let numBlocks = data.readInt24LE(at: entryOffset + 0x29)
+            let startingBlock = data.readInt24LE(at: entryOffset + 0x2F)
+            let fileSize = Int(data.readUInt32BE(at: entryOffset + 0x34))
+
+            entries.append(STFSFileEntry(
+                filename: filename,
+                isDirectory: isDirectory,
+                isConsecutive: isConsecutive,
+                numBlocks: numBlocks,
+                startingBlock: startingBlock,
+                fileSize: fileSize
+            ))
         }
     }
 
-    try data.write(to: url, options: .atomic)
+    guard let entry = entries.first(where: { predicate($0.filename) && $0.fileSize > 0 }) else {
+        return nil
+    }
+
+    var fileData = Data()
+    for i in 0..<entry.numBlocks {
+        let blockNum = entry.startingBlock + i
+        let offset = blockToOffset(blockNum)
+        guard offset + 0x1000 <= data.count else { break }
+        fileData.append(data[offset..<(offset + 0x1000)])
+    }
+
+    if fileData.count > entry.fileSize {
+        fileData = fileData.prefix(entry.fileSize)
+    }
+    return fileData.isEmpty ? nil : fileData
 }
 
+// MARK: - DTA Parsing
+
+struct RB3SongInfo {
+    var trackName: String = ""
+    var artist: String = ""
+    var albumName: String = ""
+    var yearReleased: String = ""
+    var genre: String = ""
+    var songLength: String = ""
+    var vocalParts: String = ""
+}
+
+func parseRB3SongInfo(from dtaData: Data) -> RB3SongInfo? {
+    guard let raw = String(data: dtaData, encoding: .utf8)
+            ?? String(data: dtaData, encoding: .isoLatin1) else { return nil }
+
+    var info = RB3SongInfo()
+
+    func extractQuoted(_ key: String) -> String? {
+        let patterns = ["'\(key)'", "(\(key)"]
+        for pattern in patterns {
+            guard let range = raw.range(of: pattern, options: .caseInsensitive) else { continue }
+            let after = raw[range.upperBound...]
+            guard let openQuote = after.firstIndex(of: "\"") else { continue }
+            let valueStart = after.index(after: openQuote)
+            guard let closeQuote = after[valueStart...].firstIndex(of: "\"") else { continue }
+            let value = String(after[valueStart..<closeQuote])
+            if !value.isEmpty && !value.contains("/") || key == "album_name" {
+                return value
+            }
+        }
+        return nil
+    }
+
+    func extractSymbol(_ key: String) -> String? {
+        let patterns = ["'\(key)'", "(\(key)"]
+        for pattern in patterns {
+            guard let range = raw.range(of: pattern, options: .caseInsensitive) else { continue }
+            let after = raw[range.upperBound...].drop(while: { $0 == " " || $0 == "\r" || $0 == "\n" || $0 == "'" })
+            let token = after.prefix(while: { $0 != ")" && $0 != " " && !$0.isNewline })
+            let value = String(token).trimmingCharacters(in: CharacterSet.whitespaces.union(.init(charactersIn: "'")))
+            if !value.isEmpty { return value }
+        }
+        return nil
+    }
+
+    if let n = extractQuoted("song_name") {
+        info.trackName = n
+    } else {
+        info.trackName = extractQuoted("name") ?? ""
+    }
+
+    info.artist = extractQuoted("artist") ?? ""
+    info.albumName = extractQuoted("album_name") ?? ""
+    info.yearReleased = extractSymbol("year_released") ?? ""
+    info.genre = extractSymbol("genre")?.replacingOccurrences(of: "_", with: " ") ?? ""
+
+    if let ms = extractSymbol("song_length"), let msInt = Int(ms) {
+        let seconds = msInt / 1000
+        info.songLength = String(format: "%d:%02d", seconds / 60, seconds % 60)
+    }
+
+    if let vp = extractSymbol("vocal_parts") {
+        info.vocalParts = vp
+    }
+
+    return (info.artist.isEmpty && info.trackName.isEmpty) ? nil : info
+}
+
+func extractRB3SongInfo(from url: URL) -> RB3SongInfo? {
+    guard let data = try? Data(contentsOf: url, options: .mappedIfSafe),
+          let dtaData = extractFileFromSTFS(data: data, matching: { $0.lowercased().hasSuffix(".dta") }),
+          let info = parseRB3SongInfo(from: dtaData) else { return nil }
+    return info
+}
+
+// MARK: - Data Helpers
+
 extension Data {
+    func readUInt16BE(at offset: Int) -> UInt16 {
+        guard offset + 2 <= count else { return 0 }
+        return UInt16(self[offset]) << 8 | UInt16(self[offset + 1])
+    }
+
+    func readUInt16LE(at offset: Int) -> UInt16 {
+        guard offset + 2 <= count else { return 0 }
+        return UInt16(self[offset]) | UInt16(self[offset + 1]) << 8
+    }
+
+    func readInt24BE(at offset: Int) -> Int {
+        guard offset + 3 <= count else { return 0 }
+        return Int(self[offset]) << 16 | Int(self[offset + 1]) << 8 | Int(self[offset + 2])
+    }
+
+    func readInt24LE(at offset: Int) -> Int {
+        guard offset + 3 <= count else { return 0 }
+        return Int(self[offset]) | Int(self[offset + 1]) << 8 | Int(self[offset + 2]) << 16
+    }
+
     func readUInt32BE(at offset: Int) -> UInt32 {
         guard offset + 4 <= count else { return 0 }
         return UInt32(self[offset]) << 24
@@ -189,28 +355,4 @@ extension Data {
             .trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
-    mutating func writeUInt32BE(_ value: UInt32, at offset: Int) {
-        guard offset + 4 <= count else { return }
-        self[offset]     = UInt8((value >> 24) & 0xFF)
-        self[offset + 1] = UInt8((value >> 16) & 0xFF)
-        self[offset + 2] = UInt8((value >> 8) & 0xFF)
-        self[offset + 3] = UInt8(value & 0xFF)
-    }
-
-    mutating func writeUTF16BEString(_ string: String, at offset: Int, maxBytes: Int) {
-        guard offset + maxBytes <= count else { return }
-        var encoded: [UInt8] = []
-        for scalar in string.unicodeScalars {
-            if encoded.count + 2 > maxBytes - 2 { break }
-            let val = UInt16(scalar.value)
-            encoded.append(UInt8(val >> 8))
-            encoded.append(UInt8(val & 0xFF))
-        }
-        while encoded.count < maxBytes {
-            encoded.append(0)
-        }
-        for (i, byte) in encoded.enumerated() {
-            self[offset + i] = byte
-        }
-    }
 }
