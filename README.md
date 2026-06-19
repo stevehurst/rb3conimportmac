@@ -63,6 +63,49 @@ Once configured, the drive will have a `Content/` folder that the Xbox and this 
 
 ---
 
+## Using Custom Songs Alongside Your Existing DLC and RB1/RB2 Exports
+
+If you already own official Rock Band DLC or have exported songs from Rock Band 1 or 2, you can play them next to your customs — but there's an important catch, because **Title Updates, save files, and content licenses are three completely separate systems.**
+
+### How these systems actually relate
+
+- **Title Update** — the console loads the **highest-numbered Title Update it finds across *all* connected storage** (internal HDD + every USB drive). It does **not** look at your save file to decide this. Custom CON songs only load under **TU4**; TU5+ and the plain on-disc version both block them. So **if your customs load, TU4 is active** — that fact alone proves you are *not* running the on-disc version.
+- **Save file** — holds your band, characters, scores, and setlists only. It carries **no licenses and no Title Update information.** Copying your save to a USB drive will not change which TU loads or make licensed content play.
+- **Licenses** — official DLC and RB1/RB2 export songs are **licensed content**, bound to **(1) the gamertag** that bought/exported them and **(2) the console** they were originally downloaded/exported to.
+
+### Why DLC and exports work on TU5 but not TU4
+
+If your DLC and exports load fine under **TU5** but stop loading under **TU4** — on the **same console** you originally downloaded them on — the cause is the **offline (machine) license**, not the Title Update itself.
+
+Xbox 360 licensed content carries two kinds of license:
+
+- A **profile license** — lets the owning gamertag play the content **online, anywhere**.
+- A **machine (console) license** — lets the content play **offline** on that specific console, for any profile.
+
+Now apply that to each update:
+
+- **TU5 → you're online** → the game verifies your **profile license** live → DLC and exports play. ✅
+- **TU4 → you must be offline** (going online forces the TU5 upgrade) → offline playback requires the **machine license** stored locally on the console → if it's missing, the content shows in the list but **won't load**. ❌
+
+The machine license commonly goes missing after a past **license transfer, system-cache clear, or storage migration** — even on the console where everything was originally downloaded.
+
+### The fix: write the offline license, then revert to TU4
+
+The license step requires Xbox Live, so do it **before** downgrading:
+
+1. **Go online (you'll be on TU5).** Sign in with the gamertag that owns the DLC/exports.
+2. **Run a License Transfer to *this* console** — Guide button → **Settings → Account → License Transfer** ("download your licenses to this Xbox"). This re-binds all your content's **machine licenses** to the current console.
+   - *Alternative:* re-download every DLC and export pack from **Download History** — that also deposits the offline license. The formal License Transfer tool is limited to about **once per 12 months**; the Download History re-download is the repeatable method.
+3. **Confirm** the DLC/exports still play while online.
+4. **Reinstall TU4** (see [Title Update](#title-update)) and sync your customs, then **stay offline.**
+5. Both now load under TU4 — customs because TU4 allows them, DLC/exports because the offline machine license is finally present.
+
+### Homebrewed / RGH consoles
+
+If your console is modded, skip the downgrade dance entirely. [RB3Enhanced](https://rb3e.rbenhanced.rocks/) and [Rock Band 3 Deluxe](https://rb3dx.milohax.org/) run custom songs on the **latest** update, so you keep TU5 (and all your DLC) and gain customs at the same time — plus a much higher song cap. These require a homebrewed (RGH/JTAG) console and do **not** work on stock retail hardware.
+
+---
+
 ## macOS App
 
 **RB3Importer.app** is included as a pre-built app in this repo.
@@ -229,6 +272,7 @@ Custom songs are **CON** packages (console-signed, content type `0x00000001`). O
 | App blocked on launch | Unsigned / not notarized | Right-click → Open |
 | macOS `._` files on drive | macOS writes metadata to FAT32 volumes | Both tools clean these automatically |
 | Songs missing after 256 | Xbox 360 folder file limit | Split across a second USB drive |
+| DLC / exports play on TU5 but not TU4 | Offline (machine) license missing — TU4 runs offline and needs a locally-stored license | License Transfer to this console while online, then revert to TU4 — see [Using Custom Songs Alongside Your Existing DLC](#using-custom-songs-alongside-your-existing-dlc-and-rb1rb2-exports) |
 | Song info shows "Could not read encoded song data" | Package uses non-standard DTA encoding | Cosmetic only — song still works in-game |
 
 ---
