@@ -1,8 +1,10 @@
 import SwiftUI
+import AppKit
 import UniformTypeIdentifiers
 
 struct LibraryView: View {
     @ObservedObject var library: LibraryManager
+    var onSyncNow: (LibrarySong) -> Void
     @State private var editingSong: LibrarySong?
     @State private var showDuplicates = false
     @State private var searchText = ""
@@ -184,7 +186,9 @@ struct LibraryView: View {
                             song: song,
                             isSelected: library.selectedSongIDs.contains(song.id),
                             onToggle: { library.toggleSelection(song.id) },
-                            onInfo: { editingSong = song }
+                            onInfo: { editingSong = song },
+                            onShowInFinder: { revealInFinder(song) },
+                            onSyncNow: { onSyncNow(song) }
                         )
                     }
                 } label: {
@@ -210,6 +214,10 @@ struct LibraryView: View {
         }
     }
 
+    private func revealInFinder(_ song: LibrarySong) {
+        NSWorkspace.shared.activateFileViewerSelecting([song.url])
+    }
+
     private func handleDrop(_ providers: [NSItemProvider]) {
         var urls: [URL] = []
         let group = DispatchGroup()
@@ -233,6 +241,8 @@ struct LibrarySongRow: View {
     let isSelected: Bool
     let onToggle: () -> Void
     let onInfo: () -> Void
+    let onShowInFinder: () -> Void
+    let onSyncNow: () -> Void
 
     var body: some View {
         HStack(spacing: 10) {
@@ -265,5 +275,17 @@ struct LibrarySongRow: View {
         }
         .padding(.vertical, 2)
         .contentShape(Rectangle())
+        .contextMenu {
+            Button { onInfo() } label: {
+                Label("Song Info", systemImage: "info.circle")
+            }
+            Button { onSyncNow() } label: {
+                Label("Sync Now", systemImage: "arrow.right.circle")
+            }
+            Divider()
+            Button { onShowInFinder() } label: {
+                Label("Show in Finder", systemImage: "folder")
+            }
+        }
     }
 }

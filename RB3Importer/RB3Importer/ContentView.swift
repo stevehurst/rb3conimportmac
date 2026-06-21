@@ -41,7 +41,7 @@ struct ContentView: View {
 
     private var tabContent: some View {
         TabView(selection: $selectedTab) {
-            LibraryView(library: library)
+            LibraryView(library: library, onSyncNow: handleSyncNow)
                 .tabItem { Label("Library", systemImage: "music.note.list") }
                 .tag(0)
 
@@ -215,6 +215,11 @@ struct ContentView: View {
         }
     }
 
+    private func handleSyncNow(_ song: LibrarySong) {
+        guard let drive = selectedDrive else { return }
+        Task { await syncSongs([song], to: drive.url, skipped: 0) }
+    }
+
     private func syncToDrive(_ driveURL: URL) async {
         let songsToSync = library.selectedSongs.filter {
             !driveContent.isSongOnDrive($0) || driveContent.songNeedsResync($0)
@@ -223,8 +228,18 @@ struct ContentView: View {
             syncStatus = .done(copied: 0, skipped: library.selectedSongs.count, errors: 0)
             return
         }
+        await syncSongs(songsToSync, to: driveURL, skipped: library.selectedSongs.count - songsToSync.count)
+    }
 
-        var copied = 0, skipped = 0, errors = 0
+    private func syncSongs(_ songsToSync: [LibrarySong], to driveURL: URL, skipped initialSkipped: Int) async {
+        guard !songsToSync.isEmpty else {
+            syncStatus = .done(copied: 0, skipped: initialSkipped, errors: 0)
+            return
+        }
+
+        var copied = 0
+        let skipped = initialSkipped
+        var errors = 0
         let total = songsToSync.count
         syncStatus = .syncing(copied: 0, total: total)
 
@@ -263,16 +278,28 @@ struct ContentView: View {
             }
         }
 
-        let rb3Root = driveURL.appendingPathComponent(rb3BasePath)
-        let dotClean = Process()
-        dotClean.executableURL = URL(fileURLWithPath: "/usr/bin/dot_clean")
-        dotClean.arguments = ["-m", rb3Root.path]
-        try? dotClean.run()
-        dotClean.waitUntilExit()
+        let contentRoot = driveURL.appendingPathComponent("Content")
+        cleanDriveMetadataFiles(under: contentRoot)
         let cache = driveURL.appendingPathComponent(contentCachePath)
         try? FileManager.default.removeItem(at: cache)
 
         await driveContent.scan(driveURL: driveURL)
         syncStatus = .done(copied: copied, skipped: skipped, errors: errors)
+    }
+}
+
+private func cleanDriveMetadataFiles(under root: URL) {
+    let dotClean = Process()
+    dotClean.executableURL = URL(fileURLWithPath: "/usr/bin/dot_clean")
+    dotClean.arguments = ["-m", root.path]
+    try? dotClean.run()
+    dotClean.waitUntilExit()
+
+    // Explicitly remove any ._  files dot_clean may have missed (e.g. orphans with no matching real file)
+    let fm = FileManager.default
+    guard let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey], options: []) else { return }
+    for case let url as URL in enumerator {
+        guard url.lastPathComponent.hasPrefix("._") else { continue }
+        try? fm.removeItem(at: url)
     }
 }
