@@ -108,6 +108,14 @@ class LibraryManager: ObservableObject {
         }
     }
 
+    // Matches "file.rb3con", "file_rb3con", "file_v1.0_rb3con", or extensionless files.
+    // pathExtension alone fails for names like "song_v1.0_rb3con" where the dot is in the version.
+    private nonisolated static func isSTFSCandidate(_ url: URL) -> Bool {
+        let name = url.lastPathComponent.lowercased()
+        let ext = url.pathExtension.lowercased()
+        return ext == "rb3con" || ext == "" || name.hasSuffix("rb3con")
+    }
+
     private nonisolated static func folderFingerprint(_ folder: URL) -> String {
         let fm = FileManager.default
         guard let enumerator = fm.enumerator(
@@ -118,8 +126,7 @@ class LibraryManager: ObservableObject {
 
         var parts: [String] = []
         for case let fileURL as URL in enumerator {
-            let ext = fileURL.pathExtension.lowercased()
-            guard ext == "rb3con" || ext == "" else { continue }
+            guard isSTFSCandidate(fileURL) else { continue }
             guard let res = try? fileURL.resourceValues(forKeys: [.fileSizeKey, .contentModificationDateKey, .isRegularFileKey]),
                   res.isRegularFile == true else { continue }
             let size = res.fileSize ?? 0
@@ -164,8 +171,7 @@ class LibraryManager: ObservableObject {
 
         var songs: [LibrarySong] = []
         for case let fileURL as URL in enumerator {
-            let ext = fileURL.pathExtension.lowercased()
-            guard ext == "rb3con" || ext == "" else { continue }
+            guard isSTFSCandidate(fileURL) else { continue }
 
             guard let res = try? fileURL.resourceValues(forKeys: [.isRegularFileKey, .contentModificationDateKey]),
                   res.isRegularFile == true else { continue }
@@ -238,8 +244,7 @@ class LibraryManager: ObservableObject {
         let fm = FileManager.default
 
         for url in urls {
-            let ext = url.pathExtension.lowercased()
-            guard ext == "rb3con" || ext == "" else { continue }
+            guard Self.isSTFSCandidate(url) else { continue }
             let dest = libraryURL.appendingPathComponent(url.lastPathComponent)
             if !fm.fileExists(atPath: dest.path) {
                 try? fm.copyItem(at: url, to: dest)

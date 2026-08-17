@@ -81,6 +81,7 @@ struct DriveView: View {
     @ObservedObject var library: LibraryManager
     @ObservedObject var driveContent: DriveContentManager
     let selectedDrive: DriveInfo?
+    var onRemove: (DriveSong) -> Void
 
     var body: some View {
         if selectedDrive == nil {
@@ -149,7 +150,7 @@ struct DriveView: View {
                             }
                             Spacer()
                             Button {
-                                driveContent.removeFromDrive(song)
+                                onRemove(song)
                             } label: {
                                 Image(systemName: "trash")
                                     .font(.caption)
@@ -157,6 +158,13 @@ struct DriveView: View {
                             }
                             .buttonStyle(.plain)
                             .help("Remove from drive")
+                        }
+                        .contextMenu {
+                            Button(role: .destructive) {
+                                onRemove(song)
+                            } label: {
+                                Label("Remove from Drive", systemImage: "trash")
+                            }
                         }
                     }
                 }

@@ -45,7 +45,7 @@ struct ContentView: View {
                 .tabItem { Label("Library", systemImage: "music.note.list") }
                 .tag(0)
 
-            DriveView(library: library, driveContent: driveContent, selectedDrive: selectedDrive)
+            DriveView(library: library, driveContent: driveContent, selectedDrive: selectedDrive, onRemove: handleRemoveFromDrive)
                 .tabItem { Label("Drive", systemImage: "externaldrive.fill") }
                 .tag(1)
         }
@@ -138,7 +138,7 @@ struct ContentView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(selectedDrive == nil || library.selectedSongs.isEmpty || isSyncing)
+            .disabled(selectedDrive == nil || (library.selectedSongs.isEmpty && songsToRemoveFromDrive.isEmpty) || isSyncing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -158,16 +158,27 @@ struct ContentView: View {
         }
     }
 
+    private var songsToRemoveFromDrive: [DriveSong] {
+        driveContent.driveSongs.filter { driveSong in
+            !library.selectedSongs.contains {
+                $0.url.lastPathComponent.lowercased() == driveSong.filename.lowercased() ||
+                $0.songName.lowercased() == driveSong.displayName.lowercased()
+            }
+        }
+    }
+
     @ViewBuilder
     private var liveSyncCounts: some View {
-        if library.selectedSongs.isEmpty {
+        let onDrive = library.selectedSongs.filter { driveContent.isSongOnDrive($0) && !driveContent.songNeedsResync($0) }.count
+        let needsResync = library.selectedSongs.filter { driveContent.songNeedsResync($0) }.count
+        let pending = library.selectedSongs.count - onDrive - needsResync
+        let toRemove = songsToRemoveFromDrive.count
+
+        if library.selectedSongs.isEmpty && toRemove == 0 {
             Text("No songs selected")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
         } else {
-            let onDrive = library.selectedSongs.filter { driveContent.isSongOnDrive($0) && !driveContent.songNeedsResync($0) }.count
-            let needsResync = library.selectedSongs.filter { driveContent.songNeedsResync($0) }.count
-            let pending = library.selectedSongs.count - onDrive - needsResync
             HStack(spacing: 6) {
                 if onDrive > 0 {
                     Label("\(onDrive) on drive", systemImage: "checkmark.circle")
@@ -180,6 +191,10 @@ struct ContentView: View {
                 if pending > 0 {
                     Label("\(pending) pending", systemImage: "arrow.right.circle.dotted")
                         .foregroundStyle(.orange)
+                }
+                if toRemove > 0 {
+                    Label("\(toRemove) to remove", systemImage: "minus.circle")
+                        .foregroundStyle(.red)
                 }
             }
             .font(.caption)
@@ -215,12 +230,28 @@ struct ContentView: View {
         }
     }
 
+    private func handleRemoveFromDrive(_ driveSong: DriveSong) {
+        driveContent.removeFromDrive(driveSong)
+        // Deselect the matching library song
+        if let libSong = library.allSongs.first(where: {
+            $0.url.lastPathComponent.lowercased() == driveSong.filename.lowercased() ||
+            $0.songName.lowercased() == driveSong.displayName.lowercased()
+        }) {
+            library.selectedSongIDs.remove(libSong.id)
+        }
+    }
+
     private func handleSyncNow(_ song: LibrarySong) {
         guard let drive = selectedDrive else { return }
         Task { await syncSongs([song], to: drive.url, skipped: 0) }
     }
 
     private func syncToDrive(_ driveURL: URL) async {
+        let toRemove = songsToRemoveFromDrive
+        for driveSong in toRemove {
+            driveContent.removeFromDrive(driveSong)
+        }
+
         let songsToSync = library.selectedSongs.filter {
             !driveContent.isSongOnDrive($0) || driveContent.songNeedsResync($0)
         }
