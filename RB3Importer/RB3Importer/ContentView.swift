@@ -255,11 +255,21 @@ struct ContentView: View {
         let songsToSync = library.selectedSongs.filter {
             !driveContent.isSongOnDrive($0) || driveContent.songNeedsResync($0)
         }
-        guard !songsToSync.isEmpty else {
-            syncStatus = .done(copied: 0, skipped: library.selectedSongs.count, errors: 0)
-            return
+
+        if !songsToSync.isEmpty {
+            await syncSongs(songsToSync, to: driveURL, skipped: library.selectedSongs.count - songsToSync.count)
         }
-        await syncSongs(songsToSync, to: driveURL, skipped: library.selectedSongs.count - songsToSync.count)
+
+        let contentRoot = driveURL.appendingPathComponent("Content")
+        cleanDriveMetadataFiles(under: contentRoot)
+        let cache = driveURL.appendingPathComponent(contentCachePath)
+        try? FileManager.default.removeItem(at: cache)
+
+        await driveContent.scan(driveURL: driveURL)
+
+        if songsToSync.isEmpty {
+            syncStatus = .done(copied: 0, skipped: library.selectedSongs.count, errors: 0)
+        }
     }
 
     private func syncSongs(_ songsToSync: [LibrarySong], to driveURL: URL, skipped initialSkipped: Int) async {
@@ -309,12 +319,6 @@ struct ContentView: View {
             }
         }
 
-        let contentRoot = driveURL.appendingPathComponent("Content")
-        cleanDriveMetadataFiles(under: contentRoot)
-        let cache = driveURL.appendingPathComponent(contentCachePath)
-        try? FileManager.default.removeItem(at: cache)
-
-        await driveContent.scan(driveURL: driveURL)
         syncStatus = .done(copied: copied, skipped: skipped, errors: errors)
     }
 }
@@ -326,11 +330,12 @@ private func cleanDriveMetadataFiles(under root: URL) {
     try? dotClean.run()
     dotClean.waitUntilExit()
 
-    // Explicitly remove any ._  files dot_clean may have missed (e.g. orphans with no matching real file)
     let fm = FileManager.default
     guard let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey], options: []) else { return }
     for case let url as URL in enumerator {
-        guard url.lastPathComponent.hasPrefix("._") else { continue }
-        try? fm.removeItem(at: url)
+        let name = url.lastPathComponent
+        if name.hasPrefix("._") || name == ".DS_Store" {
+            try? fm.removeItem(at: url)
+        }
     }
 }

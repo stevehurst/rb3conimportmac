@@ -74,16 +74,16 @@ def find_rb3con_files(source_dir):
     return files
 
 
-def cleanup_apple_double(directory):
-    removed = 0
-    for name in os.listdir(directory):
-        if name.startswith("._"):
-            path = os.path.join(directory, name)
-            os.remove(path)
-            removed += 1
-    if removed:
-        print(f"  Cleaned up {removed} macOS AppleDouble (._) file(s)")
+def cleanup_macos_metadata(directory):
     subprocess.run(["dot_clean", "-m", directory], capture_output=True)
+    removed = 0
+    for root, dirs, files in os.walk(directory):
+        for name in files:
+            if name.startswith("._") or name == ".DS_Store":
+                os.remove(os.path.join(root, name))
+                removed += 1
+    if removed:
+        print(f"  Cleaned up {removed} macOS metadata file(s)")
 
 
 def main():
@@ -180,8 +180,9 @@ def main():
     print(f"\n{'Copied' if not args.dry_run else 'Would copy'}: {copied}  Skipped: {skipped}  Errors: {errors}")
 
     if not args.dry_run:
-        for d in dest_dirs_used:
-            cleanup_apple_double(d)
+        content_root = os.path.join(args.drive, "Content")
+        if os.path.isdir(content_root):
+            cleanup_macos_metadata(content_root)
 
     cache_path = os.path.join(args.drive, CONTENT_CACHE_REL)
     if os.path.exists(cache_path):
@@ -234,7 +235,7 @@ def clean_bad_files(drive, source_dir, dry_run):
             removed += 1
 
     if removed:
-        cleanup_apple_double(bad_dir)
+        cleanup_macos_metadata(bad_dir)
         print(f"Cleaned {removed} misplaced file(s) from 00000002/")
     else:
         print("No misplaced files found in 00000002/")
