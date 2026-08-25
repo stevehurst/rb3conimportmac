@@ -30,6 +30,7 @@ class DriveManager: ObservableObject {
             .volumeAvailableCapacityKey,
             .volumeIsRemovableKey,
             .volumeIsEjectableKey,
+            .volumeIsInternalKey,
         ]
         guard let urls = FileManager.default.mountedVolumeURLs(
             includingResourceValuesForKeys: Array(keys),
@@ -41,7 +42,7 @@ class DriveManager: ObservableObject {
 
         drives = urls.compactMap { url -> DriveInfo? in
             guard let res = try? url.resourceValues(forKeys: keys),
-                  (res.volumeIsRemovable == true || res.volumeIsEjectable == true),
+                  (res.volumeIsRemovable == true || res.volumeIsEjectable == true || res.volumeIsInternal == false),
                   let name = res.volumeName, !name.isEmpty
             else { return nil }
 

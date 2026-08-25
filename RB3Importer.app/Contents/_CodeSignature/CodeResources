@@ -10,29 +10,11 @@
 		</data>
 		<key>Resources/Assets.car</key>
 		<data>
-		1wvnYpP9N65v5VxGKUuHgsQRjaQ=
+		/zgrl9elTvqRGDTsa5WM9mdcDVY=
 		</data>
 	</dict>
 	<key>files2</key>
 	<dict>
-		<key>MacOS/RB3Importer.debug.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			KAKNoxFGoRmvBK4bOu2GID5ENIc=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"28028da31146a119af04ae1b3aed86203e443487"</string>
-		</dict>
-		<key>MacOS/__preview.dylib</key>
-		<dict>
-			<key>cdhash</key>
-			<data>
-			c/kSQigpRdSU+DE3UTHEcO7vfKY=
-			</data>
-			<key>requirement</key>
-			<string>cdhash H"73f91242282945d494f831375131c470eeef7ca6"</string>
-		</dict>
 		<key>Resources/AppIcon.icns</key>
 		<dict>
 			<key>hash2</key>
@@ -44,7 +26,7 @@
 		<dict>
 			<key>hash2</key>
 			<data>
-			bN26lyFw3KPOATEL0NVtgwR2vX7Oi12it2F5FfoYXCw=
+			Pi1iKhtlvdNEsaTv9W1JVX+Cdo0yYsGhw5zNWFLeUyk=
 			</data>
 		</dict>
 	</dict>
