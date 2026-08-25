@@ -53,7 +53,6 @@ struct SongEntry: Identifiable {
     }
 }
 
-private let rb3BasePath = "Content/0000000000000000/45410914"
 private let contentCachePath = "Content/0000000000000000/FFFE07DF/00040000/ContentCache.pkg"
 
 @MainActor
@@ -96,8 +95,8 @@ class ImportManager: ObservableObject {
                     try parseSTFSHeader(from: url)
                 }.value
                 songs[idx].header = header
-                if !header.isRB3 {
-                    songs[idx].status = .skipped("Not an RB3 package")
+                if !header.isRockBand {
+                    songs[idx].status = .skipped("Not a Rock Band 2 or 3 package")
                 } else if header.contentFolder == nil {
                     songs[idx].status = .skipped("Unknown content type \(String(format: "%08X", header.contentType))")
                 } else {
@@ -126,8 +125,9 @@ class ImportManager: ObservableObject {
                 continue
             }
 
+            let game = header.game ?? .rb3
             let destDir = driveURL
-                .appendingPathComponent(rb3BasePath)
+                .appendingPathComponent(game.basePath)
                 .appendingPathComponent(folder)
             let destFile = destDir.appendingPathComponent(entry.destFilename)
 

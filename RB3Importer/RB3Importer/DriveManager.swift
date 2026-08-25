@@ -13,9 +13,15 @@ struct DriveInfo: Identifiable, Hashable {
     }
 
     var hasXboxContent: Bool {
-        FileManager.default.fileExists(
-            atPath: url.appendingPathComponent("Content").path
-        )
+        let fm = FileManager.default
+        return fm.fileExists(atPath: url.appendingPathComponent("Content").path)
+    }
+
+    var detectedGames: [RockBandGame] {
+        let fm = FileManager.default
+        return RockBandGame.allCases.filter { game in
+            fm.fileExists(atPath: url.appendingPathComponent(game.basePath).path)
+        }
     }
 }
 

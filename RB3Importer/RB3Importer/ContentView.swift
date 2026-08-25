@@ -1,7 +1,6 @@
 import SwiftUI
 import CryptoKit
 
-private let rb3BasePath = "Content/0000000000000000/45410914"
 private let contentCachePath = "Content/0000000000000000/FFFE07DF/00040000/ContentCache.pkg"
 
 struct ContentView: View {
@@ -138,7 +137,7 @@ struct ContentView: View {
                 }
             }
             .buttonStyle(.borderedProminent)
-            .disabled(selectedDrive == nil || (library.selectedSongs.isEmpty && songsToRemoveFromDrive.isEmpty) || isSyncing)
+            .disabled(selectedDrive == nil || library.selectedSongs.isEmpty || isSyncing)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)
@@ -158,23 +157,13 @@ struct ContentView: View {
         }
     }
 
-    private var songsToRemoveFromDrive: [DriveSong] {
-        driveContent.driveSongs.filter { driveSong in
-            !library.selectedSongs.contains {
-                $0.url.lastPathComponent.lowercased() == driveSong.filename.lowercased() ||
-                $0.songName.lowercased() == driveSong.displayName.lowercased()
-            }
-        }
-    }
-
     @ViewBuilder
     private var liveSyncCounts: some View {
         let onDrive = library.selectedSongs.filter { driveContent.isSongOnDrive($0) && !driveContent.songNeedsResync($0) }.count
         let needsResync = library.selectedSongs.filter { driveContent.songNeedsResync($0) }.count
         let pending = library.selectedSongs.count - onDrive - needsResync
-        let toRemove = songsToRemoveFromDrive.count
 
-        if library.selectedSongs.isEmpty && toRemove == 0 {
+        if library.selectedSongs.isEmpty {
             Text("No songs selected")
                 .font(.caption)
                 .foregroundStyle(.tertiary)
@@ -191,10 +180,6 @@ struct ContentView: View {
                 if pending > 0 {
                     Label("\(pending) pending", systemImage: "arrow.right.circle.dotted")
                         .foregroundStyle(.orange)
-                }
-                if toRemove > 0 {
-                    Label("\(toRemove) to remove", systemImage: "minus.circle")
-                        .foregroundStyle(.red)
                 }
             }
             .font(.caption)
@@ -247,11 +232,6 @@ struct ContentView: View {
     }
 
     private func syncToDrive(_ driveURL: URL) async {
-        let toRemove = songsToRemoveFromDrive
-        for driveSong in toRemove {
-            driveContent.removeFromDrive(driveSong)
-        }
-
         let songsToSync = library.selectedSongs.filter {
             !driveContent.isSongOnDrive($0) || driveContent.songNeedsResync($0)
         }
@@ -284,9 +264,10 @@ struct ContentView: View {
         let total = songsToSync.count
         syncStatus = .syncing(copied: 0, total: total)
 
-        let destDir = driveURL.appendingPathComponent(rb3BasePath).appendingPathComponent("00000001")
-
         for song in songsToSync {
+            let destDir = driveURL
+                .appendingPathComponent(song.game.basePath)
+                .appendingPathComponent("00000001")
             let destName = song.url.lastPathComponent.count > 42
                 ? String(song.url.lastPathComponent.prefix(42))
                 : song.url.lastPathComponent

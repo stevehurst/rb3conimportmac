@@ -10,6 +10,7 @@ struct SongInfoView: View {
         VStack(spacing: 0) {
             Form {
                 Section {
+                    infoRow("Game", "Rock Band \(song.game == .rb2 ? "2" : "3")")
                     if let info = song.header.songInfo {
                         infoRow("Track", info.trackName)
                         infoRow("Artist", info.artist)
@@ -25,7 +26,7 @@ struct SongInfoView: View {
                 } header: {
                     Text("Rock Band Song Data")
                 } footer: {
-                    Text("Encoded in the song package — displayed in Rock Band 3 during gameplay.")
+                    Text("Encoded in the song package — displayed in Rock Band during gameplay.")
                         .font(.caption2)
                         .foregroundStyle(.tertiary)
                 }

@@ -64,7 +64,7 @@ struct LibraryView: View {
             Text("No Library Folder Selected")
                 .font(.title2)
                 .foregroundStyle(.secondary)
-            Text("Choose a folder containing your .rb3con files")
+            Text("Choose a folder containing your .rb2con / .rb3con files")
                 .font(.callout)
                 .foregroundStyle(.tertiary)
             Button("Select Library Folder…") { library.selectLibraryFolder() }
@@ -94,7 +94,7 @@ struct LibraryView: View {
             Text("No Songs Found")
                 .font(.title2)
                 .foregroundStyle(.secondary)
-            Text("Drop .rb3con files here or add them to your library folder")
+            Text("Drop .rb2con / .rb3con files here or add them to your library folder")
                 .font(.callout)
                 .foregroundStyle(.tertiary)
             HStack(spacing: 12) {
@@ -264,6 +264,8 @@ struct LibrarySongRow: View {
             }
 
             Spacer()
+
+            GameBadge(game: song.game)
 
             Button { onInfo() } label: {
                 Image(systemName: "info.circle")

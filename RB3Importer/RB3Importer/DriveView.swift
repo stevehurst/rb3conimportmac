@@ -6,6 +6,7 @@ struct DriveSong: Identifiable, Equatable {
     let url: URL
     let header: STFSHeader?
     let filename: String
+    let game: RockBandGame
 
     var displayName: String { header?.displayName ?? filename }
     var artist: String { header?.artist ?? "Unknown Artist" }
@@ -20,21 +21,29 @@ class DriveContentManager: ObservableObject {
     func scan(driveURL: URL) async {
         isScanning = true
 
-        let conFolder = driveURL
-            .appendingPathComponent("Content/0000000000000000/45410914/00000001")
-
         let songs = await Task.detached(priority: .userInitiated) { () -> [DriveSong] in
             let fm = FileManager.default
-            guard fm.fileExists(atPath: conFolder.path),
-                  let files = try? fm.contentsOfDirectory(at: conFolder, includingPropertiesForKeys: nil) else {
-                return []
+            var allSongs: [DriveSong] = []
+
+            for game in RockBandGame.allCases {
+                let conFolder = driveURL
+                    .appendingPathComponent(game.basePath)
+                    .appendingPathComponent("00000001")
+
+                guard fm.fileExists(atPath: conFolder.path),
+                      let files = try? fm.contentsOfDirectory(at: conFolder, includingPropertiesForKeys: nil) else {
+                    continue
+                }
+
+                let gameSongs = files.compactMap { url -> DriveSong? in
+                    guard !url.lastPathComponent.hasPrefix(".") else { return nil }
+                    let header = try? parseSTFSHeader(from: url)
+                    return DriveSong(url: url, header: header, filename: url.lastPathComponent, game: game)
+                }
+                allSongs.append(contentsOf: gameSongs)
             }
 
-            return files.compactMap { url -> DriveSong? in
-                guard !url.lastPathComponent.hasPrefix(".") else { return nil }
-                let header = try? parseSTFSHeader(from: url)
-                return DriveSong(url: url, header: header, filename: url.lastPathComponent)
-            }
+            return allSongs
         }.value
 
         driveSongs = songs.sorted {
@@ -149,6 +158,7 @@ struct DriveView: View {
                                 .lineLimit(1)
                             }
                             Spacer()
+                            GameBadge(game: song.game)
                             Button {
                                 onRemove(song)
                             } label: {
@@ -171,6 +181,26 @@ struct DriveView: View {
             }
         }
         .listStyle(.plain)
+    }
+}
+
+struct GameBadge: View {
+    let game: RockBandGame
+
+    private var color: Color {
+        switch game {
+        case .rb2: return .purple
+        case .rb3: return .blue
+        }
+    }
+
+    var body: some View {
+        Text(game.label)
+            .font(.caption2.bold())
+            .padding(.horizontal, 5)
+            .padding(.vertical, 1)
+            .background(color.opacity(0.15), in: RoundedRectangle(cornerRadius: 3))
+            .foregroundStyle(color)
     }
 }
 
@@ -213,6 +243,7 @@ struct SyncSongRow: View {
                     .lineLimit(1)
             }
             Spacer()
+            GameBadge(game: song.game)
             Text(statusLabel)
                 .font(.caption)
                 .padding(.horizontal, 6)

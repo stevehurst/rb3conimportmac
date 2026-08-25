@@ -6,6 +6,7 @@ struct LibrarySong: Identifiable, Hashable {
     let url: URL
     let header: STFSHeader
     let modificationDate: Date?
+    let game: RockBandGame
     var isSelected: Bool = false
 
     var songName: String { header.displayName }
@@ -113,7 +114,7 @@ class LibraryManager: ObservableObject {
     private nonisolated static func isSTFSCandidate(_ url: URL) -> Bool {
         let name = url.lastPathComponent.lowercased()
         let ext = url.pathExtension.lowercased()
-        return ext == "rb3con" || ext == "" || name.hasSuffix("rb3con")
+        return ext == "rb3con" || ext == "rb2con" || ext == "" || name.hasSuffix("rb3con") || name.hasSuffix("rb2con")
     }
 
     private nonisolated static func folderFingerprint(_ folder: URL) -> String {
@@ -177,13 +178,14 @@ class LibraryManager: ObservableObject {
                   res.isRegularFile == true else { continue }
 
             guard let header = try? parseSTFSHeader(from: fileURL),
-                  header.isRB3 else { continue }
+                  let game = header.game else { continue }
 
             songs.append(LibrarySong(
                 id: UUID(),
                 url: fileURL,
                 header: header,
-                modificationDate: res.contentModificationDate
+                modificationDate: res.contentModificationDate,
+                game: game
             ))
         }
         return songs.sorted { $0.trackName.localizedCaseInsensitiveCompare($1.trackName) == .orderedAscending }

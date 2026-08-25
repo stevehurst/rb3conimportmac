@@ -1,6 +1,32 @@
 import Foundation
 import AppKit
 
+enum RockBandGame: String, CaseIterable, Hashable {
+    case rb2 = "RB2"
+    case rb3 = "RB3"
+
+    var titleID: UInt32 {
+        switch self {
+        case .rb2: return 0x45410869
+        case .rb3: return 0x45410914
+        }
+    }
+
+    var titleIDHex: String {
+        String(format: "%08X", titleID)
+    }
+
+    var basePath: String {
+        "Content/0000000000000000/\(titleIDHex)"
+    }
+
+    var label: String { rawValue }
+
+    static func from(titleID: UInt32) -> RockBandGame? {
+        allCases.first { $0.titleID == titleID }
+    }
+}
+
 enum STFSError: LocalizedError {
     case fileTooSmall
     case invalidMagic(String)
@@ -10,7 +36,7 @@ enum STFSError: LocalizedError {
         switch self {
         case .fileTooSmall: return "File too small to be a valid STFS package"
         case .invalidMagic(let m): return "Not an STFS package (magic: '\(m)')"
-        case .wrongTitleID(let id): return "Wrong Title ID \(String(format: "%08X", id)), expected RB3 (45410914)"
+        case .wrongTitleID(let id): return "Wrong Title ID \(String(format: "%08X", id)), not a Rock Band 2 or 3 package"
         case .unknownContentType(let ct): return "Unknown content type \(String(format: "%08X", ct))"
         }
     }
@@ -26,7 +52,8 @@ struct STFSHeader {
     let fileSize: UInt64
     var songInfo: RB3SongInfo?
 
-    static let rb3TitleID: UInt32 = 0x45410914
+    static let rb3TitleID: UInt32 = RockBandGame.rb3.titleID
+    static let rb2TitleID: UInt32 = RockBandGame.rb2.titleID
 
     static let displayNameOffset = 0x411
     static let displayNameMaxBytes = 0x80
@@ -54,7 +81,10 @@ struct STFSHeader {
         }
     }
 
+    var game: RockBandGame? { RockBandGame.from(titleID: titleID) }
+    var isRockBand: Bool { game != nil }
     var isRB3: Bool { titleID == Self.rb3TitleID }
+    var isRB2: Bool { titleID == Self.rb2TitleID }
 
     var artist: String {
         if let si = songInfo, !si.artist.isEmpty { return si.artist }
