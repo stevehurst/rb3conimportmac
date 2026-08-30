@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct LibraryView: View {
     @ObservedObject var library: LibraryManager
+    @ObservedObject var driveContent: DriveContentManager
     var onSyncNow: (LibrarySong) -> Void
     @State private var editingSong: LibrarySong?
     @State private var showDuplicates = false
@@ -16,7 +17,8 @@ struct LibraryView: View {
             let filtered = group.songs.filter {
                 $0.trackName.localizedCaseInsensitiveContains(searchText) ||
                 $0.artist.localizedCaseInsensitiveContains(searchText) ||
-                $0.album.localizedCaseInsensitiveContains(searchText)
+                $0.album.localizedCaseInsensitiveContains(searchText) ||
+                ($0.folderName?.localizedCaseInsensitiveContains(searchText) == true)
             }
             guard !filtered.isEmpty else { return nil }
             return ArtistGroup(artist: group.artist, songs: filtered)
@@ -125,6 +127,39 @@ struct LibraryView: View {
             .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 6))
             .frame(maxWidth: 250)
 
+            Button { expandedArtists.removeAll() } label: {
+                Image(systemName: "chevron.right.2")
+                    .font(.caption)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Collapse All")
+
+            Button {
+                let artistsWithSyncedItems = Set(filteredGroups.filter { group in
+                    group.songs.contains { song in
+                        driveContent.isSongOnDrive(song)
+                    }
+                }.map(\.artist))
+                expandedArtists = artistsWithSyncedItems
+            } label: {
+                Image(systemName: "line.3.horizontal.decrease")
+                    .font(.caption)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Show Synced Artists")
+
+            Button {
+                expandedArtists = Set(filteredGroups.map(\.artist))
+            } label: {
+                Image(systemName: "chevron.down.2")
+                    .font(.caption)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.small)
+            .help("Expand All")
+
             Spacer()
 
             Text("\(library.allSongs.count) songs")
@@ -193,6 +228,25 @@ struct LibraryView: View {
                     }
                 } label: {
                     HStack {
+                        Button {
+                            let songIDs = Set(group.songs.map(\.id))
+                            let allSelected = songIDs.isSubset(of: library.selectedSongIDs)
+                            if allSelected {
+                                library.selectedSongIDs.subtract(songIDs)
+                            } else {
+                                library.selectedSongIDs.formUnion(songIDs)
+                            }
+                        } label: {
+                            let songIDs = Set(group.songs.map(\.id))
+                            let selectedCount = songIDs.intersection(library.selectedSongIDs).count
+                            Image(systemName: selectedCount == group.songs.count ? "checkmark.circle.fill" :
+                                    selectedCount > 0 ? "minus.circle.fill" : "circle")
+                                .foregroundStyle(selectedCount == group.songs.count ? .blue :
+                                    selectedCount > 0 ? .blue.opacity(0.5) : .secondary)
+                        }
+                        .buttonStyle(.plain)
+                        .help(Set(group.songs.map(\.id)).isSubset(of: library.selectedSongIDs) ? "Deselect all by \(group.artist)" : "Select all by \(group.artist)")
+
                         Text(group.artist)
                             .font(.headline)
                         Spacer()
@@ -264,6 +318,15 @@ struct LibrarySongRow: View {
             }
 
             Spacer()
+
+            if let folder = song.folderName {
+                Text(folder)
+                    .font(.caption2)
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .frame(maxWidth: 160, alignment: .trailing)
+            }
 
             GameBadge(game: song.game)
 

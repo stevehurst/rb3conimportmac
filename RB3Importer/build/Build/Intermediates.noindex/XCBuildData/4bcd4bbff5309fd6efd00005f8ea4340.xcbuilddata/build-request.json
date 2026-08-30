@@ -1,0 +1,65 @@
+{
+  "buildCommand" : {
+    "command" : "build",
+    "skipDependencies" : false,
+    "style" : "buildOnly"
+  },
+  "configuredTargets" : [
+    {
+      "guid" : "713a0c6b0f73a04c4b8a5c043909d54f35e4fff7bfee3ddbb977889641cdeca5"
+    }
+  ],
+  "containerPath" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer.xcodeproj",
+  "continueBuildingAfterErrors" : false,
+  "dependencyScope" : "workspace",
+  "enableIndexBuildArena" : false,
+  "hideShellScriptEnvironment" : false,
+  "parameters" : {
+    "action" : "build",
+    "activeArchitecture" : "arm64",
+    "activeRunDestination" : {
+      "disableOnlyActiveArch" : false,
+      "hostTargetedPlatform" : null,
+      "platform" : "macosx",
+      "sdk" : "macosx26.5",
+      "sdkVariant" : "macos",
+      "supportedArchitectures" : [
+        "arm64e",
+        "arm64",
+        "x86_64"
+      ],
+      "targetArchitecture" : "arm64"
+    },
+    "arenaInfo" : {
+      "buildIntermediatesPath" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex",
+      "buildProductsPath" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Products",
+      "derivedDataPath" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build",
+      "indexDataStoreFolderPath" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Index.noindex/DataStore",
+      "indexEnableDataStore" : true,
+      "indexPCHPath" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Index.noindex/PrecompiledHeaders",
+      "pchPath" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/PrecompiledHeaders"
+    },
+    "configurationName" : "Release",
+    "overrides" : {
+      "commandLine" : {
+        "table" : {
+
+        }
+      },
+      "synthesized" : {
+        "table" : {
+          "ACTION" : "build",
+          "ENABLE_PREVIEWS" : "NO",
+          "ENABLE_XOJIT_PREVIEWS" : "YES",
+          "ONLY_ACTIVE_ARCH" : "YES"
+        }
+      }
+    }
+  },
+  "schemeCommand" : "launch",
+  "showNonLoggedProgress" : true,
+  "useDryRun" : false,
+  "useImplicitDependencies" : true,
+  "useLegacyBuildLocations" : false,
+  "useParallelTargets" : true
+}

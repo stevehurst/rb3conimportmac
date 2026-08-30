@@ -7,6 +7,7 @@ struct LibrarySong: Identifiable, Hashable {
     let header: STFSHeader
     let modificationDate: Date?
     let game: RockBandGame
+    let folderName: String?
     var isSelected: Bool = false
 
     var songName: String { header.displayName }
@@ -164,6 +165,7 @@ class LibraryManager: ObservableObject {
 
     private nonisolated static func scanFolder(_ folder: URL) -> [LibrarySong] {
         let fm = FileManager.default
+        let folderPath = folder.standardizedFileURL.path
         guard let enumerator = fm.enumerator(
             at: folder,
             includingPropertiesForKeys: [.fileSizeKey, .isRegularFileKey, .contentModificationDateKey],
@@ -180,12 +182,20 @@ class LibraryManager: ObservableObject {
             guard let header = try? parseSTFSHeader(from: fileURL),
                   let game = header.game else { continue }
 
+            let parentPath = fileURL.deletingLastPathComponent().standardizedFileURL.path
+            let folderName: String? = parentPath == folderPath ? nil : {
+                let relative = String(parentPath.dropFirst(folderPath.count))
+                    .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+                return relative.isEmpty ? nil : relative
+            }()
+
             songs.append(LibrarySong(
                 id: UUID(),
                 url: fileURL,
                 header: header,
                 modificationDate: res.contentModificationDate,
-                game: game
+                game: game,
+                folderName: folderName
             ))
         }
         return songs.sorted { $0.trackName.localizedCaseInsensitiveCompare($1.trackName) == .orderedAscending }

@@ -2,11 +2,13 @@ import Foundation
 import AppKit
 
 enum RockBandGame: String, CaseIterable, Hashable {
+    case rb1 = "RB1"
     case rb2 = "RB2"
     case rb3 = "RB3"
 
     var titleID: UInt32 {
         switch self {
+        case .rb1: return 0x45410829
         case .rb2: return 0x45410869
         case .rb3: return 0x45410914
         }
@@ -18,6 +20,16 @@ enum RockBandGame: String, CaseIterable, Hashable {
 
     var basePath: String {
         "Content/0000000000000000/\(titleIDHex)"
+    }
+
+    /// Where songs should be synced on the drive — RB1 songs go into the RB2 folder
+    /// because RB3/RB3DX scans RB2's content folder but not RB1's.
+    var syncBasePath: String {
+        switch self {
+        case .rb1: return RockBandGame.rb2.basePath
+        case .rb2: return basePath
+        case .rb3: return basePath
+        }
     }
 
     var label: String { rawValue }
@@ -128,8 +140,16 @@ struct STFSHeader {
     }
 }
 
-func parseSTFSHeader(from url: URL) throws -> STFSHeader {
-    let data = try Data(contentsOf: url, options: .mappedIfSafe)
+func parseSTFSHeader(from url: URL, skipDTA: Bool = false) throws -> STFSHeader {
+    let readLength = skipDTA ? min(0x6000, Int.max) : Int.max
+    let fileHandle = try FileHandle(forReadingFrom: url)
+    defer { try? fileHandle.close() }
+    let data: Data
+    if skipDTA {
+        data = fileHandle.readData(ofLength: readLength)
+    } else {
+        data = try Data(contentsOf: url, options: .mappedIfSafe)
+    }
     guard data.count >= 0x500 else { throw STFSError.fileTooSmall }
 
     let magicRaw = String(bytes: data[0..<4], encoding: .ascii) ?? ""
@@ -149,7 +169,7 @@ func parseSTFSHeader(from url: URL) throws -> STFSHeader {
     }
 
     var thumbnailData: Data? = nil
-    if data.count >= STFSHeader.thumbnailDataOffset + 8 {
+    if !skipDTA, data.count >= STFSHeader.thumbnailDataOffset + 8 {
         let thumbnailSize = Int(data.readUInt32BE(at: STFSHeader.thumbnailSizeOffset))
         if thumbnailSize > 0 && thumbnailSize <= STFSHeader.thumbnailMaxBytes {
             let thumbEnd = STFSHeader.thumbnailDataOffset + thumbnailSize
@@ -162,7 +182,7 @@ func parseSTFSHeader(from url: URL) throws -> STFSHeader {
     let fileSize = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map { UInt64($0) } ?? 0
 
     var songInfo: RB3SongInfo? = nil
-    if let dtaData = extractFileFromSTFS(data: data, matching: { $0.lowercased().hasSuffix(".dta") }) {
+    if !skipDTA, let dtaData = extractFileFromSTFS(data: data, matching: { $0.lowercased().hasSuffix(".dta") }) {
         songInfo = parseRB3SongInfo(from: dtaData)
     }
 

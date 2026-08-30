@@ -1,0 +1,12 @@
+{
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/RB3ImporterApp.swift" : {
+    "abi-baseline-json" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer.abi.json",
+    "const-values" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary.swiftconstvalues",
+    "dependencies" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary.d",
+    "diagnostics" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary.dia",
+    "objc-header" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-Swift.h",
+    "swiftdoc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer.swiftdoc",
+    "swiftmodule" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer.swiftmodule",
+    "swiftsourceinfo" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer.swiftsourceinfo"
+  }
+}

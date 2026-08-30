@@ -1,0 +1,240 @@
+{
+  "source": "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/LibraryView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "No Library Folder Selected",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 66
+        }
+      },
+      {
+        "comment": "",
+        "key": "Choose a folder containing your .rb2con / .rb3con files",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 69
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select Library Folder…",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 72
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scanning library…",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 84
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Songs Found",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 96
+        }
+      },
+      {
+        "comment": "",
+        "key": "Drop .rb2con / .rb3con files here or add them to your library folder",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "Change Folder…",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 103
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rescan",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 104
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld songs",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 165
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld selected",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 170
+        }
+      },
+      {
+        "comment": "",
+        "key": "Collapse All",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 136
+        }
+      },
+      {
+        "comment": "",
+        "key": "Show Synced Artists",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 151
+        }
+      },
+      {
+        "comment": "",
+        "key": "Expand All",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 161
+        }
+      },
+      {
+        "comment": "",
+        "key": "Search songs…",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 116
+        }
+      },
+      {
+        "comment": "",
+        "key": "Deselect All",
+        "location": {
+          "startingColumn": 80,
+          "startingLine": 182
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select All",
+        "location": {
+          "startingColumn": 97,
+          "startingLine": 182
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select All",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 189
+        }
+      },
+      {
+        "comment": "",
+        "key": "Deselect All",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 190
+        }
+      },
+      {
+        "comment": "",
+        "key": "Expand All",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 192
+        }
+      },
+      {
+        "comment": "",
+        "key": "Collapse All",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 195
+        }
+      },
+      {
+        "comment": "",
+        "key": "Change Library Folder…",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 197
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rescan Library",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 198
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 253
+        }
+      },
+      {
+        "comment": "",
+        "key": "Deselect all by %@",
+        "location": {
+          "startingColumn": 98,
+          "startingLine": 248
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select all by %@",
+        "location": {
+          "startingColumn": 134,
+          "startingLine": 248
+        }
+      },
+      {
+        "comment": "",
+        "key": "Song info & metadata",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 339
+        }
+      },
+      {
+        "comment": "",
+        "key": "Song Info",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 345
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sync Now",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 348
+        }
+      },
+      {
+        "comment": "",
+        "key": "Show in Finder",
+        "location": {
+          "startingColumn": 23,
+          "startingLine": 352
+        }
+      }
+    ]
+  },
+  "version": 1
+}

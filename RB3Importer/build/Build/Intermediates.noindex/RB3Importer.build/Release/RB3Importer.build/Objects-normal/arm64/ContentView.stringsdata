@@ -1,0 +1,128 @@
+{
+  "source": "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/ContentView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Library",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 44
+        }
+      },
+      {
+        "comment": "",
+        "key": "Drive",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 48
+        }
+      },
+      {
+        "comment": "",
+        "key": "",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 59
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rescan drives and drive content",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 88
+        }
+      },
+      {
+        "comment": "",
+        "key": "No Xbox Content folder — configure this drive on your Xbox 360 first",
+        "location": {
+          "startingColumn": 31,
+          "startingLine": 99
+        }
+      },
+      {
+        "comment": "",
+        "key": "Select Xbox 360 USB drive…",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 60
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scanning drive…",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 107
+        }
+      },
+      {
+        "comment": "",
+        "key": "Some scanning takes time, be patient.",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Sync to Drive",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 135
+        }
+      },
+      {
+        "comment": "",
+        "key": "Syncing…",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 131
+        }
+      },
+      {
+        "comment": "",
+        "key": "Syncing %lld/%lld…",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 151
+        }
+      },
+      {
+        "comment": "",
+        "key": "No songs selected",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 167
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld on drive",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 173
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld updated",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 177
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld pending",
+        "location": {
+          "startingColumn": 27,
+          "startingLine": 181
+        }
+      }
+    ]
+  },
+  "version": 1
+}

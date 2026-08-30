@@ -1,0 +1,80 @@
+{
+  "source": "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/DriveView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "No Drive Selected",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 110
+        }
+      },
+      {
+        "comment": "",
+        "key": "Plug in your Xbox 360 USB drive and select it above",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 113
+        }
+      },
+      {
+        "comment": "",
+        "key": "Scanning drive…",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 121
+        }
+      },
+      {
+        "comment": "",
+        "key": "On Drive (%lld songs)",
+        "location": {
+          "startingColumn": 21,
+          "startingLine": 144
+        }
+      },
+      {
+        "comment": "",
+        "key": "Selected for Sync — %lld pending, %lld already on drive",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 140
+        }
+      },
+      {
+        "comment": "",
+        "key": "No songs on drive yet",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 146
+        }
+      },
+      {
+        "comment": "",
+        "key": "Remove from drive",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 179
+        }
+      },
+      {
+        "comment": "",
+        "key": "·",
+        "location": {
+          "startingColumn": 46,
+          "startingLine": 161
+        }
+      },
+      {
+        "comment": "",
+        "key": "Remove from Drive",
+        "location": {
+          "startingColumn": 39,
+          "startingLine": 185
+        }
+      }
+    ]
+  },
+  "version": 1
+}

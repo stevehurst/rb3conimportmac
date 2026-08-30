@@ -7,6 +7,7 @@ struct DriveSong: Identifiable, Equatable {
     let header: STFSHeader?
     let filename: String
     let game: RockBandGame
+    let fileSize: UInt64
 
     var displayName: String { header?.displayName ?? filename }
     var artist: String { header?.artist ?? "Unknown Artist" }
@@ -25,20 +26,23 @@ class DriveContentManager: ObservableObject {
             let fm = FileManager.default
             var allSongs: [DriveSong] = []
 
-            for game in RockBandGame.allCases {
+            let scannedFolders: Set<String> = [RockBandGame.rb2.basePath, RockBandGame.rb3.basePath]
+            for folderBase in scannedFolders {
                 let conFolder = driveURL
-                    .appendingPathComponent(game.basePath)
+                    .appendingPathComponent(folderBase)
                     .appendingPathComponent("00000001")
 
                 guard fm.fileExists(atPath: conFolder.path),
-                      let files = try? fm.contentsOfDirectory(at: conFolder, includingPropertiesForKeys: nil) else {
+                      let files = try? fm.contentsOfDirectory(at: conFolder, includingPropertiesForKeys: [.fileSizeKey]) else {
                     continue
                 }
 
                 let gameSongs = files.compactMap { url -> DriveSong? in
                     guard !url.lastPathComponent.hasPrefix(".") else { return nil }
-                    let header = try? parseSTFSHeader(from: url)
-                    return DriveSong(url: url, header: header, filename: url.lastPathComponent, game: game)
+                    let header = try? parseSTFSHeader(from: url, skipDTA: true)
+                    let game = header?.game ?? .rb3
+                    let size = (try? url.resourceValues(forKeys: [.fileSizeKey]).fileSize).map { UInt64($0) } ?? 0
+                    return DriveSong(url: url, header: header, filename: url.lastPathComponent, game: game, fileSize: size)
                 }
                 allSongs.append(contentsOf: gameSongs)
             }
@@ -66,17 +70,22 @@ class DriveContentManager: ObservableObject {
 
     func songNeedsResync(_ librarySong: LibrarySong) -> Bool {
         guard let driveSong = matchingDriveSong(for: librarySong) else { return false }
-        let driveSize = driveSong.header?.fileSize ?? 0
-        return librarySong.fileSize != driveSize
+        return librarySong.fileSize != driveSong.fileSize
     }
 
     func matchingDriveSong(for librarySong: LibrarySong) -> DriveSong? {
         let libFilename = librarySong.url.lastPathComponent.lowercased()
-        let libName = librarySong.songName.lowercased()
-        return driveSongs.first { driveSong in
-            driveSong.filename.lowercased() == libFilename ||
-            driveSong.displayName.lowercased() == libName
+        let truncatedFilename = libFilename.count > 42 ? String(libFilename.prefix(42)) : libFilename
+        let sameGame = driveSongs.filter { $0.game == librarySong.game }
+
+        if let match = sameGame.first(where: { $0.filename.lowercased() == libFilename }) {
+            return match
         }
+        if let match = sameGame.first(where: { $0.filename.lowercased() == truncatedFilename }) {
+            return match
+        }
+        let libName = librarySong.songName.lowercased()
+        return sameGame.first { $0.displayName.lowercased() == libName }
     }
 }
 
@@ -189,6 +198,7 @@ struct GameBadge: View {
 
     private var color: Color {
         switch game {
+        case .rb1: return .orange
         case .rb2: return .purple
         case .rb3: return .blue
         }

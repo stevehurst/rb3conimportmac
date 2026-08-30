@@ -1,0 +1,72 @@
+{
+  "source": "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/MetadataEditorView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Could not read encoded song data",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 22
+        }
+      },
+      {
+        "comment": "",
+        "key": "Rock Band Song Data",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 27
+        }
+      },
+      {
+        "comment": "",
+        "key": "Encoded in the song package — displayed in Rock Band during gameplay.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 29
+        }
+      },
+      {
+        "comment": "",
+        "key": "Thumbnail",
+        "location": {
+          "startingColumn": 34,
+          "startingLine": 41
+        }
+      },
+      {
+        "comment": "",
+        "key": "File Metadata",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 52
+        }
+      },
+      {
+        "comment": "",
+        "key": "Shown in the Xbox 360 dashboard file browser.",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 54
+        }
+      },
+      {
+        "comment": "",
+        "key": "File Info",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 67
+        }
+      },
+      {
+        "comment": "",
+        "key": "Close",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 76
+        }
+      }
+    ]
+  },
+  "version": 1
+}

@@ -1,0 +1,56 @@
+{
+  "source": "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/DuplicateResolverView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "%lld duplicate%@ detected",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 34
+        }
+      },
+      {
+        "comment": "",
+        "key": "Duplicate Songs Found",
+        "location": {
+          "startingColumn": 19,
+          "startingLine": 32
+        }
+      },
+      {
+        "comment": "",
+        "key": "Largest",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 64
+        }
+      },
+      {
+        "comment": "",
+        "key": "Keep",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 71
+        }
+      },
+      {
+        "comment": "",
+        "key": "%lld of %lld",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 92
+        }
+      },
+      {
+        "comment": "",
+        "key": "Skip All",
+        "location": {
+          "startingColumn": 20,
+          "startingLine": 97
+        }
+      }
+    ]
+  },
+  "version": 1
+}

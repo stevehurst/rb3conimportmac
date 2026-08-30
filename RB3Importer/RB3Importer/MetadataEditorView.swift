@@ -10,7 +10,7 @@ struct SongInfoView: View {
         VStack(spacing: 0) {
             Form {
                 Section {
-                    infoRow("Game", "Rock Band \(song.game == .rb2 ? "2" : "3")")
+                    infoRow("Game", "Rock Band \(song.game == .rb1 ? "1" : song.game == .rb2 ? "2" : "3")")
                     if let info = song.header.songInfo {
                         infoRow("Track", info.trackName)
                         infoRow("Artist", info.artist)
@@ -58,6 +58,9 @@ struct SongInfoView: View {
 
                 Section {
                     infoRow("Filename", song.url.lastPathComponent)
+                    if let folder = song.folderName {
+                        infoRow("Folder", folder)
+                    }
                     infoRow("File Size", song.fileSizeFormatted)
                     infoRow("Package Type", song.header.contentTypeName)
                 } header: {

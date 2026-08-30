@@ -40,7 +40,7 @@ struct ContentView: View {
 
     private var tabContent: some View {
         TabView(selection: $selectedTab) {
-            LibraryView(library: library, onSyncNow: handleSyncNow)
+            LibraryView(library: library, driveContent: driveContent, onSyncNow: handleSyncNow)
                 .tabItem { Label("Library", systemImage: "music.note.list") }
                 .tag(0)
 
@@ -266,24 +266,23 @@ struct ContentView: View {
 
         for song in songsToSync {
             let destDir = driveURL
-                .appendingPathComponent(song.game.basePath)
+                .appendingPathComponent(song.game.syncBasePath)
                 .appendingPathComponent("00000001")
             let destName = song.url.lastPathComponent.count > 42
                 ? String(song.url.lastPathComponent.prefix(42))
                 : song.url.lastPathComponent
             let destFile = destDir.appendingPathComponent(destName)
 
-            if FileManager.default.fileExists(atPath: destFile.path) {
-                try? FileManager.default.removeItem(at: destFile)
-            }
-
             do {
                 try FileManager.default.createDirectory(at: destDir, withIntermediateDirectories: true)
+                if FileManager.default.fileExists(atPath: destFile.path) {
+                    try FileManager.default.removeItem(at: destFile)
+                }
                 let data = try await Task.detached(priority: .userInitiated) {
                     try Data(contentsOf: song.url)
                 }.value
                 try await Task.detached(priority: .userInitiated) {
-                    try data.write(to: destFile, options: .atomic)
+                    try data.write(to: destFile)
                 }.value
                 let written = try await Task.detached(priority: .userInitiated) {
                     try Data(contentsOf: destFile)
@@ -305,17 +304,11 @@ struct ContentView: View {
 }
 
 private func cleanDriveMetadataFiles(under root: URL) {
-    let dotClean = Process()
-    dotClean.executableURL = URL(fileURLWithPath: "/usr/bin/dot_clean")
-    dotClean.arguments = ["-m", root.path]
-    try? dotClean.run()
-    dotClean.waitUntilExit()
-
     let fm = FileManager.default
     guard let enumerator = fm.enumerator(at: root, includingPropertiesForKeys: [.isRegularFileKey], options: []) else { return }
     for case let url as URL in enumerator {
         let name = url.lastPathComponent
-        if name.hasPrefix("._") || name == ".DS_Store" {
+        if name.hasPrefix("._") || name == ".DS_Store" || name == ".Spotlight-V100" || name == ".Trashes" || name == ".fseventsd" {
             try? fm.removeItem(at: url)
         }
     }

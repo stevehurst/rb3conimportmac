@@ -75,7 +75,6 @@ def find_rb3con_files(source_dir):
 
 
 def cleanup_macos_metadata(directory):
-    subprocess.run(["dot_clean", "-m", directory], capture_output=True)
     removed = 0
     for root, dirs, files in os.walk(directory):
         for name in files:

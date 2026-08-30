@@ -1,0 +1,66 @@
+{
+  "" : {
+    "const-values" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary.swiftconstvalues",
+    "dependencies" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary.d",
+    "diagnostics" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary.dia",
+    "emit-module-dependencies" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary-emit-module.dia",
+    "pch" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3Importer-primary.swiftdeps"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/ContentView.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/ContentView.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/DriveManager.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DriveManager.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DriveManager.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DriveManager.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/DriveView.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DriveView.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DriveView.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DriveView.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/DuplicateResolverView.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DuplicateResolverView.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DuplicateResolverView.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/DuplicateResolverView.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/ImportManager.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/ImportManager.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/ImportManager.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/ImportManager.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/LibraryManager.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/LibraryManager.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/LibraryManager.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/LibraryManager.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/LibraryView.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/LibraryView.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/LibraryView.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/LibraryView.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/MetadataEditorView.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/MetadataEditorView.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/MetadataEditorView.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/MetadataEditorView.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/RB3ImporterApp.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3ImporterApp.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3ImporterApp.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/RB3ImporterApp.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/RB3Importer/STFSPackage.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/STFSPackage.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/STFSPackage.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/STFSPackage.o"
+  },
+  "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "index-unit-output-path" : "/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/stevehurst/Sites/rb3conimportmac/RB3Importer/build/Build/Intermediates.noindex/RB3Importer.build/Release/RB3Importer.build/Objects-normal/arm64/GeneratedAssetSymbols.o"
+  }
+}
